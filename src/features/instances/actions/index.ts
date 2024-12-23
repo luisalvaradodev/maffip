@@ -2,13 +2,10 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import { Instance, InstanceCreateParams, ConnectionState, ApiResponse } from '@/features/instances/types'
+import { ApiResponse, Instance } from '@/features/instances/types'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'
 const API_KEY = process.env.API_KEY || 'mude-me'
-console.log(process.env.NEXT_PUBLIC_API_URL);
-console.log(process.env.API_KEY);
-
 
 const fetchApi = async <T>(
   endpoint: string,
@@ -23,15 +20,17 @@ const fetchApi = async <T>(
   }
 
   try {
+    
     const response = await fetch(`${API_URL}${endpoint}`, defaultOptions)
     console.log(response);
-    
+
     const data = await response.json()
     console.log(data);
     
 
     if (!response.ok) {
-      throw new Error(data.message || 'API request failed')
+      const errorMessage = data?.response?.message?.[0] || data?.message || 'API request failed'
+      throw new Error(errorMessage)
     }
 
     return { success: true, data }
@@ -45,15 +44,14 @@ const fetchApi = async <T>(
   }
 }
 
-export async function createInstance(params: InstanceCreateParams) {
+export async function createInstance(instanceName: string) {
   const payload = {
-    instanceName: params.instanceName,
-    token: params.token || '',
-    number: params.phoneNumber,
-    qrcode: params.qrcode ?? true,
-    integration: params.integration || 'WHATSAPP-BAILEYS',
-    reject_call: params.reject_call ?? false,
-    alwaysOnline: params.alwaysOnline ?? true,
+    instanceName,
+    token: "",
+    qrcode: true,
+    integration: "WHATSAPP-BAILEYS",
+    reject_call: false,
+    alwaysOnline: true,
   }
 
   const result = await fetchApi<Instance>('/instance/create', {
@@ -65,22 +63,34 @@ export async function createInstance(params: InstanceCreateParams) {
   return result
 }
 
-export async function fetchInstances() {
-  return await fetchApi<Instance[]>('/instance/fetchInstances')
-}
-
-export async function connectInstance(name: string) {
-  return await fetchApi<{ qrcode_url: string }>(`/instance/connect/${name}`, {
-    method: 'POST'
+// Rest of your existing server actions remain unchanged
+export async function connectInstance(instanceName: string) {
+  return await fetchApi<{ qrcode_url: string }>(`/instance/connect/${instanceName}`, {
+    method: 'GET'  // Changed from POST to GET as per the API requirements
   })
 }
 
-export async function getConnectionState(name: string) {
-  return await fetchApi<ConnectionState>(`/instance/connectionState/${name}`)
+export async function getConnectionState(instanceName: string) {
+  return await fetchApi<{ instance: { state: string; status: string } }>(
+    `/instance/connectionState/${instanceName}`
+  )
 }
 
-export async function logoutInstance(name: string) {
-  const result = await fetchApi(`/instance/logout/${name}`, {
+export async function fetchInstances() {
+  const result = await fetchApi<Instance[]>('/instance/fetchInstances')
+  if (result.success) {
+    const formattedData = result.data.map((item: any) => ({
+      name: item.instance.instanceName,
+      status: item.instance.status,
+      profilePictureUrl: item.instance.profilePictureUrl,
+    }))
+    return { success: true, data: formattedData }
+  }
+  return result
+}
+
+export async function logoutInstance(instanceName: string) {
+  const result = await fetchApi(`/instance/logout/${instanceName}`, {
     method: 'DELETE'
   })
   
@@ -88,8 +98,8 @@ export async function logoutInstance(name: string) {
   return result
 }
 
-export async function deleteInstance(name: string) {
-  const result = await fetchApi(`/instance/delete/${name}`, {
+export async function deleteInstance(instanceName: string) {
+  const result = await fetchApi(`/instance/delete/${instanceName}`, {
     method: 'DELETE'
   })
   

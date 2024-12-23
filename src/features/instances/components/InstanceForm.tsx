@@ -1,14 +1,15 @@
-// app/instances/components/InstanceForm.tsx
 'use client'
 
-import { useState } from 'react'
+import { useState, useTransition } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
 import * as z from 'zod'
-import { Phone, Smartphone, Loader2 } from 'lucide-react'
-import { createInstance, connectInstance } from '@/features/instances/actions'
+import { Smartphone, Loader2 } from 'lucide-react'
+import { QRCodeSVG } from "qrcode.react"
+import { createInstance, connectInstance, getConnectionState } from '@/features/instances/actions'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import {
   Form,
   FormControl,
@@ -17,208 +18,189 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
 import { useToast } from '@/hooks/use-toast'
-import { QRCodeDialog } from './QRCodedialog'
 
 const formSchema = z.object({
-  instanceName: z.string().min(3, 'Instance name must be at least 3 characters'),
-  countryCode: z.string(),
-  phoneNumber: z.string().regex(/^\d{8,15}$/, 'Enter a valid phone number'),
+  instanceName: z
+    .string()
+    .min(3, 'Instance name must be at least 3 characters')
+    .regex(/^[a-zA-Z0-9-_]+$/, 'Only letters, numbers, hyphens, and underscores allowed'),
 })
 
-const countryCodes = [
-  { value: '+1', label: 'USA', code: 'US' },
-  { value: '+44', label: 'UK', code: 'GB' },
-  { value: '+34', label: 'Spain', code: 'ES' },
-  { value: '+55', label: 'Brazil', code: 'BR' },
-  { value: '+91', label: 'India', code: 'IN' },
-  { value: '+86', label: 'China', code: 'CN' },
-  { value: '+52', label: 'Mexico', code: 'MX' },
-] as const
+type FormValues = z.infer<typeof formSchema>
 
-export function InstanceForm() {
-  const [step, setStep] = useState(1)
+interface InstanceFormProps {
+  refreshInstances: () => void
+}
+
+export function InstanceForm({ refreshInstances }: InstanceFormProps) {
+  const [isPending, startTransition] = useTransition()
+  const [activeTab, setActiveTab] = useState<"create" | "connect" | "finish">("create")
   const [qrCode, setQrCode] = useState<string | null>(null)
   const [progress, setProgress] = useState(0)
   const { toast } = useToast()
 
-  const form = useForm<z.infer<typeof formSchema>>({
+  const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       instanceName: '',
-      countryCode: '+1',
-      phoneNumber: '',
     },
   })
 
-  const { isSubmitting } = form.formState
-
-  async function onSubmit(values: z.infer<typeof formSchema>) {
-    try {
-      setProgress(33)
-      const fullPhoneNumber = `${values.countryCode}${values.phoneNumber}`
-      
-      // Create instance
-      const createResult = await createInstance({
-        instanceName: values.instanceName,
-        phoneNumber: fullPhoneNumber,
-      })
-
-      if (!createResult.success) {
-        throw new Error(createResult.error)
+  const startConnectionCheck = async (instanceName: string) => {
+    const checkInterval = setInterval(async () => {
+      try {
+        const stateResult = await getConnectionState(instanceName)
+        
+        if (stateResult.success && stateResult.data.instance.state === 'open') {
+          clearInterval(checkInterval)
+          toast({ 
+            title: 'Connection Successful',
+            description: 'WhatsApp instance is now connected'
+          })
+          refreshInstances()
+          setActiveTab("finish")
+        }
+      } catch (error) {
+        console.error('Connection check failed:', error)
       }
+    }, 5000)
 
-      setProgress(66)
-      toast({
-        title: 'Instance Created',
-        description: 'Successfully created your WhatsApp instance',
-      })
+    // Clean up interval on component unmount
+    return () => clearInterval(checkInterval)
+  }
 
-      // Connect instance
-      const connectResult = await connectInstance(values.instanceName)
-      
-      if (!connectResult.success) {
-        throw new Error(connectResult.error)
+  const onSubmit = (values: FormValues) => {
+    startTransition(async () => {
+      try {
+        setProgress(33)
+        
+        // Create instance
+        const createResult = await createInstance(values.instanceName)
+        if (!createResult.success) {
+          throw new Error(createResult.error)
+        }
+
+        setProgress(66)
+        toast({
+          title: 'Instance Created',
+          description: 'Successfully created your WhatsApp instance',
+        })
+
+        // Connect instance - Modified to handle QR code response
+        const connectResult = await connectInstance(values.instanceName)
+        if (!connectResult.success) {
+          throw new Error(connectResult.error)
+        }
+
+        setProgress(100)
+        
+        // Check if qrcode_url exists in the response
+        if (connectResult.data.qrcode_url) {
+          setQrCode(connectResult.data.qrcode_url)
+          setActiveTab("connect")
+          // Start polling for connection state
+          startConnectionCheck(values.instanceName)
+        } else {
+          throw new Error('QR code not received from server')
+        }
+
+      } catch (error) {
+        toast({
+          title: 'Error',
+          description: error instanceof Error ? error.message : 'Failed to create instance',
+          variant: 'destructive',
+        })
+        setProgress(0)
       }
-
-      setProgress(100)
-      setQrCode(connectResult.data.qrcode_url)
-      setStep(2)
-
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description: error instanceof Error ? error.message : 'Failed to create instance',
-        variant: 'destructive',
-      })
-      setProgress(0)
-    }
+    })
   }
 
   const handleReset = () => {
     form.reset()
-    setStep(1)
+    setActiveTab("create")
     setQrCode(null)
     setProgress(0)
+    refreshInstances()
   }
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>Create WhatsApp Instance</CardTitle>
-        <CardDescription>
-          Set up a new WhatsApp instance with your phone number
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        {progress > 0 && <Progress value={progress} className="mb-4" />}
-        
-        {step === 1 && (
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              <FormField
-                control={form.control}
-                name="instanceName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Instance Name</FormLabel>
-                    <FormControl>
-                      <div className="flex items-center space-x-2">
-                        <Smartphone className="w-4 h-4 text-muted-foreground" />
-                        <Input placeholder="my-whatsapp" {...field} />
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+      <CardContent className="pt-6">
+        <Tabs value={activeTab} onValueChange={(value: string) => setActiveTab(value as any)}>
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="create">Create Instance</TabsTrigger>
+            <TabsTrigger value="connect" disabled={!form.getValues('instanceName')}>
+              Connect Instance
+            </TabsTrigger>
+            <TabsTrigger value="finish" disabled={activeTab !== "finish"}>
+              Finish
+            </TabsTrigger>
+          </TabsList>
 
-              <div className="grid grid-cols-3 gap-4">
+          <TabsContent value="create">
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                 <FormField
                   control={form.control}
-                  name="countryCode"
+                  name="instanceName"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Country</FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        defaultValue={field.value}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select country" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {countryCodes.map((country) => (
-                            <SelectItem key={country.value} value={country.value}>
-                              <span className="flex items-center space-x-2">
-                                <span>{country.value}</span>
-                                <span>{country.label}</span>
-                              </span>
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="phoneNumber"
-                  render={({ field }) => (
-                    <FormItem className="col-span-2">
-                      <FormLabel>Phone Number</FormLabel>
+                      <FormLabel>Instance Name</FormLabel>
                       <FormControl>
                         <div className="flex items-center space-x-2">
-                          <Phone className="w-4 h-4 text-muted-foreground" />
-                          <Input type="tel" placeholder="123456789" {...field} />
+                          <Smartphone className="w-4 h-4 text-muted-foreground" />
+                          <Input 
+                            placeholder="my-whatsapp"
+                            {...field}
+                            disabled={isPending}
+                          />
                         </div>
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-              </div>
 
-              <Button type="submit" disabled={isSubmitting} className="w-full">
-                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Create Instance
-              </Button>
-            </form>
-          </Form>
-        )}
+                {progress > 0 && <Progress value={progress} className="mb-4" />}
 
-        {step === 2 && (
-          <div className="space-y-6">
-            <div className="text-center">
-              <h3 className="text-lg font-medium">Instance Created Successfully!</h3>
-              <p className="text-sm text-muted-foreground">
-                Scan the QR code to connect your WhatsApp account
-              </p>
+                <Button type="submit" disabled={isPending} className="w-full">
+                  {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Create Instance
+                </Button>
+              </form>
+            </Form>
+          </TabsContent>
+
+          <TabsContent value="connect">
+            <div className="space-y-6">
+              {qrCode ? (
+                <div className="flex flex-col items-center space-y-4">
+                  <p className="text-lg font-medium bg-gradient-to-r from-blue-500 to-green-500 text-white rounded-md p-4 animate-pulse">
+                    Scan this QR code to connect your WhatsApp:
+                  </p>
+                  <QRCodeSVG value={qrCode} size={256} />
+                </div>
+              ) : (
+                <div className="text-center py-4">
+                  <Loader2 className="h-8 w-8 animate-spin mx-auto" />
+                  <p>Generating QR Code...</p>
+                </div>
+              )}
             </div>
-            <Button onClick={handleReset} className="w-full">
-              Create Another Instance
-            </Button>
-          </div>
-        )}
+          </TabsContent>
 
-        <QRCodeDialog
-          isOpen={!!qrCode}
-          onClose={() => setQrCode(null)}
-          qrCodeUrl={qrCode || ''}
-        />
+          <TabsContent value="finish">
+            <div className="text-center space-y-4">
+              <p className="text-lg font-medium">Instance setup completed successfully!</p>
+              <Button onClick={handleReset} className="w-full">
+                Create Another Instance
+              </Button>
+            </div>
+          </TabsContent>
+        </Tabs>
       </CardContent>
     </Card>
   )

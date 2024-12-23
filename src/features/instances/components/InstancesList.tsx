@@ -2,7 +2,6 @@
 'use client'
 
 import { useState, useCallback } from 'react'
-import { Instance, APIInstance } from '@/features/instances/types'
 import { connectInstance, deleteInstance, logoutInstance } from '@/features/instances/actions'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -29,25 +28,47 @@ import {
 } from '@/components/ui/alert-dialog'
 import { Loader2, QrCode, LogOut, Trash2, Search, RefreshCcw } from 'lucide-react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { QRCodeDialog } from './QRCodedialog'
 import { useToast } from '@/hooks/use-toast'
+import { QRCodeDialog } from './QRCodedialog'
+
+interface Instance {
+  instanceName: string;
+  instanceId: string;
+  status: string;
+  serverUrl: string;
+  apikey: string;
+  integration: unknown;
+  profilePictureUrl?: string;
+  profileName?: string;
+}
+
+interface APIInstance {
+  instance: Instance;
+}
+
+interface DisplayInstance {
+  instanceName: string;
+  status: string;
+  profilePictureUrl?: string;
+  profileName?: string;
+}
 
 interface InstancesListProps {
-  initialInstances: APIInstance[]
+  initialInstances: Instance[] // Changed from APIInstance[]
 }
 
 export function InstancesList({ initialInstances }: InstancesListProps) {
-  // Transform API data to match our Instance type
-  const transformInstances = (apiInstances: APIInstance[]): Instance[] => {
-    return apiInstances.map(item => ({
-      name: item.instance.instanceName,
-      status: item.instance.status,
-      profilePictureUrl: item.instance.profilePictureUrl,
-      profileName: item.instance.profileName,
+  // Create a safer transform function with error handling
+  const transformInstances = useCallback((instances: Instance[]): DisplayInstance[] => {
+    return instances.map(instance => ({
+      instanceName: instance.instanceName,
+      status: instance.status,
+      profilePictureUrl: instance.profilePictureUrl,
+      profileName: instance.profileName,
     }))
-  }
+  }, [])
 
-  const [instances, setInstances] = useState<Instance[]>(transformInstances(initialInstances))
+  const [instances, setInstances] = useState<DisplayInstance[]>(transformInstances(initialInstances))
   const [searchTerm, setSearchTerm] = useState('')
   const [qrCode, setQrCode] = useState<string | null>(null)
   const [loadingStates, setLoadingStates] = useState<Record<string, boolean>>({})
@@ -62,9 +83,14 @@ export function InstancesList({ initialInstances }: InstancesListProps) {
     setSearchTerm(value.toLowerCase())
   }, [])
 
-  const filteredInstances = instances.filter(instance =>
-    instance.name.toLowerCase().includes(searchTerm)
-  )
+  // Add type guard to ensure instanceName exists
+  const filteredInstances = instances.filter((instance): instance is DisplayInstance => {
+    if (!instance || typeof instance.instanceName !== 'string') {
+      console.warn('Invalid instance found:', instance)
+      return false
+    }
+    return instance.instanceName.toLowerCase().includes(searchTerm)
+  })
 
   const handleRefresh = async () => {
     setIsRefreshing(true)
@@ -75,13 +101,22 @@ export function InstancesList({ initialInstances }: InstancesListProps) {
           'Content-Type': 'application/json',
         },
       })
-      const data = await response.json()
-      setInstances(transformInstances(data))
+      const data: APIInstance[] = await response.json()
+      
+      // Extract instances from the nested structure
+      const extractedInstances = data.map(item => item.instance)
+      
+      // Transform the instances to DisplayInstance format
+      const transformedInstances = transformInstances(extractedInstances)
+      
+      setInstances(transformedInstances)
+      
       toast({
         title: 'Refreshed',
         description: 'Instance list has been updated',
       })
     } catch (error) {
+      console.error('Refresh error:', error)
       toast({
         title: 'Refresh Failed',
         description: 'Could not refresh instance list',
@@ -123,7 +158,7 @@ export function InstancesList({ initialInstances }: InstancesListProps) {
       if (result.success) {
         setInstances(prev =>
           prev.map(instance =>
-            instance.name === instanceName
+            instance.instanceName === instanceName
               ? { ...instance, status: 'close' }
               : instance
           )
@@ -151,7 +186,7 @@ export function InstancesList({ initialInstances }: InstancesListProps) {
     try {
       const result = await deleteInstance(instanceName)
       if (result.success) {
-        setInstances(prev => prev.filter(instance => instance.name !== instanceName))
+        setInstances(prev => prev.filter(instance => instance.instanceName !== instanceName))
         toast({
           title: 'Instance Deleted',
           description: `Successfully deleted instance "${instanceName}"`,
@@ -216,7 +251,7 @@ export function InstancesList({ initialInstances }: InstancesListProps) {
               ) : (
                 filteredInstances.map((instance) => (
                   <motion.tr
-                    key={instance.name}
+                    key={instance.instanceName}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -20 }}
@@ -236,11 +271,11 @@ export function InstancesList({ initialInstances }: InstancesListProps) {
                         <Avatar>
                           <AvatarImage src={instance.profilePictureUrl} />
                           <AvatarFallback>
-                            {instance.name.slice(0, 2).toUpperCase()}
+                            {instance.instanceName.slice(0, 2).toUpperCase()}
                           </AvatarFallback>
                         </Avatar>
                         <div>
-                          <div className="font-medium">{instance.name}</div>
+                          <div className="font-medium">{instance.instanceName}</div>
                           <div className="text-sm text-muted-foreground">
                             {instance.profileName || 'No profile name'}
                           </div>
@@ -252,10 +287,10 @@ export function InstancesList({ initialInstances }: InstancesListProps) {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => handleConnect(instance.name)}
-                          disabled={loadingStates[instance.name] || instance.status === 'open'}
+                          onClick={() => handleConnect(instance.instanceName)}
+                          disabled={loadingStates[instance.instanceName] || instance.status === 'open'}
                         >
-                          {loadingStates[instance.name] ? (
+                          {loadingStates[instance.instanceName] ? (
                             <Loader2 className="h-4 w-4 animate-spin" />
                           ) : (
                             <QrCode className="h-4 w-4 mr-2" />
@@ -266,10 +301,10 @@ export function InstancesList({ initialInstances }: InstancesListProps) {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => handleLogout(instance.name)}
-                          disabled={loadingStates[instance.name] || instance.status === 'close'}
+                          onClick={() => handleLogout(instance.instanceName)}
+                          disabled={loadingStates[instance.instanceName] || instance.status === 'close'}
                         >
-                          {loadingStates[instance.name] ? (
+                          {loadingStates[instance.instanceName] ? (
                             <Loader2 className="h-4 w-4 animate-spin" />
                           ) : (
                             <LogOut className="h-4 w-4 mr-2" />
@@ -282,9 +317,9 @@ export function InstancesList({ initialInstances }: InstancesListProps) {
                             <Button
                               variant="destructive"
                               size="sm"
-                              disabled={loadingStates[instance.name] || instance.status === 'open'}
+                              disabled={loadingStates[instance.instanceName] || instance.status === 'open'}
                             >
-                              {loadingStates[instance.name] ? (
+                              {loadingStates[instance.instanceName] ? (
                                 <Loader2 className="h-4 w-4 animate-spin" />
                               ) : (
                                 <Trash2 className="h-4 w-4 mr-2" />
@@ -296,13 +331,13 @@ export function InstancesList({ initialInstances }: InstancesListProps) {
                             <AlertDialogHeader>
                               <AlertDialogTitle>Delete Instance</AlertDialogTitle>
                               <AlertDialogDescription>
-                                Are you sure you want to delete the instance "{instance.name}"? This action cannot be undone.
+                                Are you sure you want to delete the instance "{instance.instanceName}"? This action cannot be undone.
                               </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
                               <AlertDialogCancel>Cancel</AlertDialogCancel>
                               <AlertDialogAction
-                                onClick={() => handleDelete(instance.name)}
+                                onClick={() => handleDelete(instance.instanceName)}
                                 className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                               >
                                 Delete
