@@ -1,0 +1,100 @@
+import { NextResponse } from 'next/server';
+import { executeQuery } from '@/features/data/actions/db';
+import { OkPacket } from 'mysql2';
+
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const page = parseInt(searchParams.get('page') || '1');
+  const limit = parseInt(searchParams.get('limit') || '10');
+  const offset = (page - 1) * limit;
+
+  try {
+    const [products, totalCount] = await Promise.all([
+      executeQuery(`
+        SELECT p.*, c.nome as categoria_nome 
+        FROM produtos p 
+        LEFT JOIN categoria c ON p.categoria = c.id
+        LIMIT ? OFFSET ?
+      `, [limit, offset]),
+      executeQuery('SELECT COUNT(*) as count FROM produtos')
+    ]);
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const total = (totalCount as any)[0].count;
+
+    return NextResponse.json({ products, total });
+  } catch (error) {
+    console.error('Error fetching products:', error);
+    return NextResponse.json({ error: 'Error fetching products' }, { status: 500 });
+  }
+}
+
+export async function POST(request: Request) {
+  try {
+    const body = await request.json();
+    const { categoria, mainid, produto, disponivel, email, senha, dono, cc, gg, tipo } = body;
+    
+    const result = await executeQuery<OkPacket>(
+      'INSERT INTO produtos (categoria, mainid, produto, disponivel, email, senha, dono, cc, gg, tipo) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      [categoria, mainid, produto, disponivel, email, senha, dono, cc, gg, tipo]
+    );
+    
+    return NextResponse.json({ id: result.insertId });
+  } catch (error) {
+    console.error('Error creating product:', error);
+    return NextResponse.json({ error: 'Error creating product' }, { status: 500 });
+  }
+}
+
+export async function PUT(request: Request) {
+  try {
+    const body = await request.json();
+    const { id, ...updateData } = body;
+
+    const columns = Object.keys(updateData)
+      .map((key) => `\`${key}\` = ?`)
+      .join(', ');
+
+    const values = Object.values(updateData);
+
+    const result = await executeQuery<OkPacket>(
+      `UPDATE produtos SET ${columns} WHERE id = ?`,
+      [...values, id]
+    );
+
+    if (result.affectedRows === 0) {
+      return NextResponse.json({ error: 'Product not found' }, { status: 404 });
+    }
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error('Error updating product:', error);
+    return NextResponse.json({ error: 'Error updating product' }, { status: 500 });
+  }
+}
+
+
+export async function DELETE(request: Request) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const ids = searchParams.get('ids')?.split(',').map(Number);
+    
+    if (!ids || ids.length === 0) {
+      return NextResponse.json({ error: 'IDs are required' }, { status: 400 });
+    }
+    
+    const result = await executeQuery<OkPacket>(
+      'DELETE FROM produtos WHERE id IN (?)',
+      [ids]
+    );
+    
+    if (result.affectedRows === 0) {
+      return NextResponse.json({ error: 'No products found' }, { status: 404 });
+    }
+    
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error('Error deleting products:', error);
+    return NextResponse.json({ error: 'Error deleting products' }, { status: 500 });
+  }
+}
