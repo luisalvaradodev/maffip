@@ -72,13 +72,18 @@ export function ProductDialog({
     setLoading(true);
     try {
       if (product) {
+        // Editar producto
         await onSave({ ...product, ...formData } as Product);
+      } else {
+        // Crear nuevo producto
+        await onSave({ ...formData, id: Date.now() } as Product);  // Puedes ajustar el id según tu backend
       }
       onOpenChange(false);
     } finally {
       setLoading(false);
     }
   };
+  
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

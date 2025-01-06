@@ -26,15 +26,15 @@ import {
 } from "@/components/ui/alert-dialog";
 import { motion, AnimatePresence } from "framer-motion";
 
-interface CategoryTableProps {
+export interface CategoryTableProps {
   categories: Category[];
-  onDelete: (id: number) => void;
-  onUpdate: (category: Category) => void;
+  onDelete: (id: number) => Promise<void>;
+  onEdit: (category: Category) => void; // Agregamos esta línea
 }
 
 const ITEMS_PER_PAGE = 5;
 
-export function CategoryTable({ categories, onDelete, onUpdate }: CategoryTableProps) {
+export function CategoryTable({ categories, onDelete, onEdit }: CategoryTableProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -173,7 +173,7 @@ export function CategoryTable({ categories, onDelete, onUpdate }: CategoryTableP
           open={isDialogOpen}
           onOpenChange={setIsDialogOpen}
           onSave={(updatedCategory) => {
-            onUpdate(updatedCategory);
+            onEdit(updatedCategory);
             setIsDialogOpen(false);
           }}
         />

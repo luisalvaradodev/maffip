@@ -13,6 +13,7 @@ export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
   useEffect(() => {
     fetchProducts();
@@ -99,7 +100,10 @@ export default function ProductsPage() {
           </h1>
         </div>
         <Button
-          onClick={() => setIsDialogOpen(true)}
+          onClick={() => {
+            setSelectedProduct(null); // Al abrir el diálogo de creación, no pasamos un producto seleccionado.
+            setIsDialogOpen(true);
+          }}
           className="transition-all duration-200 hover:scale-105"
         >
           <Plus className="mr-2 h-4 w-4" /> Novo Produto
@@ -126,7 +130,7 @@ export default function ProductsPage() {
       </motion.div>
 
       <ProductDialog
-        product={null}
+        product={selectedProduct} // Si hay un producto seleccionado, lo pasamos al diálogo.
         open={isDialogOpen}
         onOpenChange={setIsDialogOpen}
         onSave={(product: Product) => {
@@ -134,7 +138,11 @@ export default function ProductsPage() {
             toast.error("Preencha os campos obrigatórios!");
             return;
           }
-          handleCreate(product);
+          if (selectedProduct) {
+            handleUpdate(product); // Si hay un producto seleccionado, lo actualizamos.
+          } else {
+            handleCreate(product); // Si no hay un producto seleccionado, lo creamos.
+          }
           setIsDialogOpen(false);
         }}
       />

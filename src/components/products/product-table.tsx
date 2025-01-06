@@ -77,6 +77,29 @@ export function ProductTable({ products, onDelete, onUpdate }: ProductTableProps
     setIsDialogOpen(false);
   };
 
+  // Función para generar el rango de páginas visibles
+  const getPaginationRange = (currentPage: number, totalPages: number) => {
+    const delta = 2; // Número de páginas a mostrar antes y después de la página actual
+    const range = [];
+    
+    // Mostrar la primera página
+    range.push(1);
+
+    // Mostrar páginas cercanas al currentPage
+    for (let i = Math.max(2, currentPage - delta); i <= Math.min(totalPages - 1, currentPage + delta); i++) {
+      range.push(i);
+    }
+
+    // Mostrar la última página si no está incluida
+    if (totalPages > 1 && range[range.length - 1] !== totalPages) {
+      range.push(totalPages);
+    }
+
+    return range;
+  };
+
+  const pageRange = getPaginationRange(currentPage, totalPages);
+
   return (
     <div className="space-y-4">
       <motion.div
@@ -205,6 +228,7 @@ export function ProductTable({ products, onDelete, onUpdate }: ProductTableProps
         <Pagination
           currentPage={currentPage}
           totalPages={totalPages}
+          pageRange={pageRange} // Usamos el rango de páginas calculado
           onPageChange={setCurrentPage}
         />
       )}

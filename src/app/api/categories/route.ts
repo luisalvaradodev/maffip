@@ -16,12 +16,13 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
     const { nome, mainid, valor, descricao, status, img, tipo } = body;
-    
+
     const result = await executeQuery<OkPacket>(
       'INSERT INTO categoria (nome, mainid, valor, descricao, status, img, tipo) VALUES (?, ?, ?, ?, ?, ?, ?)',
-      [nome, mainid, valor, descricao, status, img, tipo]
+      [nome, mainid ?? 0, valor, descricao, status, img, tipo] // Valor predeterminado para mainid
     );
     
+
     return NextResponse.json({ id: result.insertId });
   } catch (error) {
     console.error('Error creating category:', error);
@@ -33,16 +34,16 @@ export async function PUT(request: Request) {
   try {
     const body = await request.json();
     const { id, ...updateData } = body;
-    
+
     const result = await executeQuery<OkPacket>(
       'UPDATE categoria SET ? WHERE id = ?',
       [updateData, id]
     );
-    
+
     if (result.affectedRows === 0) {
       return NextResponse.json({ error: 'Category not found' }, { status: 404 });
     }
-    
+
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error updating category:', error);
@@ -53,24 +54,24 @@ export async function PUT(request: Request) {
 export async function DELETE(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
-    const ids = searchParams.get('ids')?.split(',').map(Number);
-    
-    if (!ids || ids.length === 0) {
-      return NextResponse.json({ error: 'IDs are required' }, { status: 400 });
+    const id = searchParams.get('id');
+
+    if (!id) {
+      return NextResponse.json({ error: 'ID is required' }, { status: 400 });
     }
-    
+
     const result = await executeQuery<OkPacket>(
-      'DELETE FROM categoria WHERE id IN (?)',
-      [ids]
+      'DELETE FROM categoria WHERE id = ?',
+      [id]
     );
-    
+
     if (result.affectedRows === 0) {
-      return NextResponse.json({ error: 'No categories found' }, { status: 404 });
+      return NextResponse.json({ error: 'Category not found' }, { status: 404 });
     }
-    
+
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Error deleting categories:', error);
-    return NextResponse.json({ error: 'Error deleting categories' }, { status: 500 });
+    console.error('Error deleting category:', error);
+    return NextResponse.json({ error: 'Error deleting category' }, { status: 500 });
   }
 }

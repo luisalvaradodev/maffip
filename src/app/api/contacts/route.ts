@@ -11,25 +11,20 @@ export async function GET(request: NextRequest) {
   try {
     console.log('Fetching contacts for mainid:', userId);
     const contacts = await executeQuery(
-      'SELECT id, nome, numero, saldo, bloqueado FROM contatos WHERE mainid = ?;',
+      'SELECT id, nome, numero, saldo, bloqueado, foto, mainid, saldoadd, comprando FROM contatos WHERE mainid = ?;',
       [userId]
     );
     console.log('Contacts fetched successfully:', contacts);
     return NextResponse.json(contacts);
   } catch (error) {
-    console.error('Error fetching contacts:', {
-      message: error.message,
-      stack: error.stack,
-      query: 'SELECT id, nome, numero, saldo, bloqueado FROM contatos WHERE mainid = ?;',
-      userId,
-    });
-    return NextResponse.json({ error: `Failed to fetch contacts: ${error.message}` }, { status: 500 });
+    console.error('Error fetching contacts:', error);
+    return NextResponse.json({ error: 'Failed to fetch contacts' }, { status: 500 });
   }
 }
 
 export async function POST(request: NextRequest) {
   const body = await request.json();
-  const { nome, numero, saldo, bloqueado, mainid } = body;
+  const { nome, numero, saldo, bloqueado, mainid, foto, saldoadd, comprando } = body;
 
   if (!nome || !numero || saldo === undefined || bloqueado === undefined || !mainid) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
@@ -37,18 +32,14 @@ export async function POST(request: NextRequest) {
 
   try {
     console.log('Inserting contact:', body);
-    await executeQuery(
-      'INSERT INTO contatos (nome, numero, saldo, bloqueado, mainid) VALUES (?, ?, ?, ?, ?);',
-      [nome, numero, saldo, bloqueado, mainid]
+    const result = await executeQuery(
+      'INSERT INTO contatos (nome, numero, saldo, bloqueado, mainid, foto, saldoadd, comprando) VALUES (?, ?, ?, ?, ?, ?, ?, ?);',
+      [nome, numero, saldo, bloqueado, mainid, foto || null, saldoadd || null, comprando || 0]
     );
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, id: result.insertId });
   } catch (error) {
-    console.error('Error inserting contact:', {
-      message: error.message,
-      stack: error.stack,
-      data: body,
-    });
-    return NextResponse.json({ error: `Failed to insert contact: ${error.message}` }, { status: 500 });
+    console.error('Error inserting contact:', error);
+    return NextResponse.json({ error: 'Failed to insert contact' }, { status: 500 });
   }
 }
 
@@ -64,11 +55,8 @@ export async function DELETE(request: NextRequest) {
     await executeQuery('DELETE FROM contatos WHERE id = ?;', [id]);
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Error deleting contact:', {
-      message: error.message,
-      stack: error.stack,
-      id,
-    });
-    return NextResponse.json({ error: `Failed to delete contact: ${error.message}` }, { status: 500 });
+    console.error('Error deleting contact:', error);
+    return NextResponse.json({ error: 'Failed to delete contact' }, { status: 500 });
   }
 }
+

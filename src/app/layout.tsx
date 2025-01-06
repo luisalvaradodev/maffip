@@ -5,6 +5,7 @@ import { ThemeProvider } from 'next-themes';
 import { Toaster } from '@/components/ui/toaster';
 import { UserProvider } from './context/UserContext';
 import { SidebarProvider } from '@/components/ui/sidebar';
+import { ModeToggle } from '@/components/toggle-theme';
 
 import '@/app/globals.css';
 
@@ -41,6 +42,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 <AppSidebar />
                 <main className="flex-1 relative bg-background overflow-auto p-6">
                   {children}
+                  <ModeToggle />
                 </main>
               </div>
             </SidebarProvider>

@@ -11,6 +11,9 @@ import { motion } from "framer-motion";
 
 export default function CategoriesPage() {
   const [categories, setCategories] = useState<Category[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<Category | null>(
+    null
+  );
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [loading, setLoading] = useState(true);
 
@@ -24,7 +27,6 @@ export default function CategoriesPage() {
       const response = await fetch("/api/categories");
       const data = await response.json();
       setCategories(data);
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {
       toast.error("Erro ao carregar categorias");
     } finally {
@@ -32,39 +34,31 @@ export default function CategoriesPage() {
     }
   };
 
-  const handleCreate = async (category: Category) => {
+  const handleCreateOrUpdate = async (category: Category) => {
     try {
+      const method = category.id ? "PUT" : "POST";
       const response = await fetch("/api/categories", {
-        method: "POST",
+        method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(category),
       });
+  
       if (response.ok) {
-        toast.success("Categoria criada com sucesso");
+        toast.success(
+          category.id
+            ? "Categoria atualizada com sucesso"
+            : "Categoria criada com sucesso"
+        );
         fetchCategories();
+        setSelectedCategory(null); // Limpia la categoría seleccionada
+      } else {
+        toast.error("Erro ao salvar categoria");
       }
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {
-      toast.error("Erro ao criar categoria");
+      toast.error("Erro ao salvar categoria");
     }
   };
-
-  const handleUpdate = async (category: Category) => {
-    try {
-      const response = await fetch("/api/categories", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(category),
-      });
-      if (response.ok) {
-        toast.success("Categoria atualizada com sucesso");
-        fetchCategories();
-      }
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    } catch (error) {
-      toast.error("Erro ao atualizar categoria");
-    }
-  };
+  
 
   const handleDelete = async (id: number) => {
     try {
@@ -74,8 +68,9 @@ export default function CategoriesPage() {
       if (response.ok) {
         toast.success("Categoria excluída com sucesso");
         fetchCategories();
+      } else {
+        toast.error("Erro ao excluir categoria");
       }
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {
       toast.error("Erro ao excluir categoria");
     }
@@ -99,11 +94,22 @@ export default function CategoriesPage() {
           </h1>
         </div>
         <Button
-          onClick={() => setIsDialogOpen(true)}
-          className="transition-all duration-200 hover:scale-105"
-        >
-          <Plus className="mr-2 h-4 w-4" /> Nova Categoria
-        </Button>
+  onClick={() => {
+    setSelectedCategory({
+      nome: "",
+      valor: 0,
+      descricao: "",
+      status: 0,
+      img: "",
+      tipo: "",
+    } as Category); // Crear un objeto vacío para nueva categoría
+    setIsDialogOpen(true);
+  }}
+  className="transition-all duration-200 hover:scale-105"
+>
+  <Plus className="mr-2 h-4 w-4" /> Nova Categoria
+</Button>
+
       </motion.div>
 
       <motion.div
@@ -120,13 +126,16 @@ export default function CategoriesPage() {
           <CategoryTable
             categories={categories}
             onDelete={handleDelete}
-            onUpdate={handleUpdate}
+            onEdit={(category) => {
+              setSelectedCategory(category);
+              setIsDialogOpen(true);
+            }}
           />
         )}
       </motion.div>
 
       <CategoryDialog
-        category={null}
+        category={selectedCategory}
         open={isDialogOpen}
         onOpenChange={setIsDialogOpen}
         onSave={(category) => {
@@ -134,7 +143,7 @@ export default function CategoriesPage() {
             toast.error("O nome da categoria é obrigatório!");
             return;
           }
-          handleCreate(category);
+          handleCreateOrUpdate(category);
           setIsDialogOpen(false);
         }}
       />

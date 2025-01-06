@@ -8,8 +8,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
-
-// Import new components
 import { StatsCards } from "@/components/admin/dashboard/stats-cards";
 import { LoadingSpinner } from "@/components/admin/dashboard/loading-spinner";
 import { ErrorDisplay } from "@/components/admin/dashboard/error-display";

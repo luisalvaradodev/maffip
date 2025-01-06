@@ -11,6 +11,13 @@ import { motion, AnimatePresence } from "framer-motion"
 import { Search, Plus, Loader2 } from 'lucide-react'
 import { CreateGroupDialog } from '@/components/groups/CreateGroupDialog'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 
 interface Group {
   id: number
@@ -27,6 +34,7 @@ export default function GroupsPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
   const [activeTab, setActiveTab] = useState('all')
+  const [entriesPerPage, setEntriesPerPage] = useState('10')
   const { toast } = useToast()
 
   useEffect(() => {
@@ -55,23 +63,25 @@ export default function GroupsPage() {
   }
 
   const handleDeleteAll = async () => {
-    try {
-      const response = await fetch('/api/groups', { method: 'DELETE' })
-      if (!response.ok) {
-        throw new Error('Failed to delete all groups')
+    if (window.confirm('Are you sure you want to delete all groups? This action cannot be undone.')) {
+      try {
+        const response = await fetch('/api/groups', { method: 'DELETE' })
+        if (!response.ok) {
+          throw new Error('Failed to delete all groups')
+        }
+        setGroups([])
+        toast({
+          title: "Success",
+          description: "All groups have been deleted.",
+        })
+      } catch (error) {
+        console.error('Error deleting all groups:', error)
+        toast({
+          title: "Error",
+          description: "Failed to delete all groups. Please try again.",
+          variant: "destructive",
+        })
       }
-      setGroups([])
-      toast({
-        title: "Success",
-        description: "All groups have been deleted.",
-      })
-    } catch (error) {
-      console.error('Error deleting all groups:', error)
-      toast({
-        title: "Error",
-        description: "Failed to delete all groups. Please try again.",
-        variant: "destructive",
-      })
     }
   }
 
@@ -98,7 +108,7 @@ export default function GroupsPage() {
           <CardTitle className="text-3xl font-bold">Group Management</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-col md:flex-row justify-between items-center mb-6 space-y-4 md:space-y-0">
+          <div className="flex flex-col md:flex-row justify-between items-center mb-6 space-y-4 md:space-y-0 md:space-x-4">
             <motion.div
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
@@ -117,6 +127,17 @@ export default function GroupsPage() {
                 className="pl-10 pr-4 py-2 w-full"
               />
             </div>
+            <Select value={entriesPerPage} onValueChange={setEntriesPerPage}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Entries per page" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="10">10 per page</SelectItem>
+                <SelectItem value="25">25 per page</SelectItem>
+                <SelectItem value="50">50 per page</SelectItem>
+                <SelectItem value="100">100 per page</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           <GroupActions 
             groupCount={filteredGroups.length} 
@@ -144,8 +165,11 @@ export default function GroupsPage() {
                     </div>
                   ) : (
                     <GroupList 
-                        groups={tabGroups[activeTab as keyof typeof tabGroups]}
-                        onRefresh={fetchGroups} loading={false}                    />
+                      groups={tabGroups[activeTab as keyof typeof tabGroups]}
+                      onRefresh={fetchGroups}
+                      loading={false}
+                      entriesPerPage={parseInt(entriesPerPage)}
+                    />
                   )}
                 </TabsContent>
               </motion.div>

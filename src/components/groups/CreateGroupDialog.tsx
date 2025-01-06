@@ -14,6 +14,7 @@ interface CreateGroupDialogProps {
 export function CreateGroupDialog({ open, onOpenChange, onGroupCreated }: CreateGroupDialogProps) {
   const [name, setName] = useState("")
   const [jid, setJid] = useState("")
+  const [participantes, setParticipantes] = useState("")
   const [isCreating, setIsCreating] = useState(false)
   const { toast } = useToast()
 
@@ -24,7 +25,7 @@ export function CreateGroupDialog({ open, onOpenChange, onGroupCreated }: Create
       const response = await fetch('/api/groups', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nome: name, jid }),
+        body: JSON.stringify({ nome: name, jid, participantes: parseInt(participantes) }),
       })
       if (!response.ok) throw new Error('Failed to create group')
       onGroupCreated()
@@ -59,6 +60,7 @@ export function CreateGroupDialog({ open, onOpenChange, onGroupCreated }: Create
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 className="col-span-3"
+                required
               />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
@@ -70,6 +72,20 @@ export function CreateGroupDialog({ open, onOpenChange, onGroupCreated }: Create
                 value={jid}
                 onChange={(e) => setJid(e.target.value)}
                 className="col-span-3"
+                required
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="participantes" className="text-right">
+                Participants
+              </Label>
+              <Input
+                id="participantes"
+                type="number"
+                value={participantes}
+                onChange={(e) => setParticipantes(e.target.value)}
+                className="col-span-3"
+                required
               />
             </div>
           </div>

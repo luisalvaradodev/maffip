@@ -33,10 +33,13 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
     const { categoria, mainid, produto, disponivel, email, senha, dono, cc, gg, tipo } = body;
-    
+
+    // Si no se proporciona `mainid`, asignamos un valor predeterminado (por ejemplo, un UUID)
+    const finalMainid = mainid ?? 88; // Cambia 'default-mainid' según el valor que necesites
+
     const result = await executeQuery<OkPacket>(
       'INSERT INTO produtos (categoria, mainid, produto, disponivel, email, senha, dono, cc, gg, tipo) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-      [categoria, mainid, produto, disponivel, email, senha, dono, cc, gg, tipo]
+      [categoria, finalMainid, produto, disponivel, email, senha, dono, cc, gg, tipo]
     );
     
     return NextResponse.json({ id: result.insertId });
@@ -46,16 +49,23 @@ export async function POST(request: Request) {
   }
 }
 
+
 export async function PUT(request: Request) {
   try {
     const body = await request.json();
     const { id, ...updateData } = body;
 
-    const columns = Object.keys(updateData)
+    // Filtramos las claves que son columnas existentes en la tabla 'produtos'
+    const validColumns = ['categoria', 'mainid', 'produto', 'disponivel', 'email', 'senha', 'dono', 'cc', 'gg', 'tipo'];
+    const filteredUpdateData = Object.fromEntries(
+      Object.entries(updateData).filter(([key]) => validColumns.includes(key))
+    );
+
+    const columns = Object.keys(filteredUpdateData)
       .map((key) => `\`${key}\` = ?`)
       .join(', ');
 
-    const values = Object.values(updateData);
+    const values = Object.values(filteredUpdateData);
 
     const result = await executeQuery<OkPacket>(
       `UPDATE produtos SET ${columns} WHERE id = ?`,
@@ -72,7 +82,6 @@ export async function PUT(request: Request) {
     return NextResponse.json({ error: 'Error updating product' }, { status: 500 });
   }
 }
-
 
 export async function DELETE(request: Request) {
   try {

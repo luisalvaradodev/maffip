@@ -8,7 +8,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { toast } from "@/hooks/use-toast"
+import { useToast } from "@/hooks/use-toast"
 import { MoreHorizontal, Send, Gift, CheckSquare, Square } from 'lucide-react'
 import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 
@@ -34,6 +34,7 @@ interface ContactActionsProps {
 
 export function ContactActions({ contact, contactCount, onRefresh, selectedContacts, setSelectedContacts }: ContactActionsProps) {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
+  const { toast } = useToast()
 
   const handleToggleBlock = async () => {
     if (!contact) return

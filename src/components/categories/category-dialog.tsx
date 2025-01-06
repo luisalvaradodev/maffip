@@ -41,8 +41,18 @@ export function CategoryDialog({
   useEffect(() => {
     if (category) {
       setFormData(category);
+    } else {
+      setFormData({
+        nome: "",
+        valor: 0,
+        descricao: "",
+        status: 0,
+        img: "",
+        tipo: "",
+      });
     }
   }, [category]);
+  
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

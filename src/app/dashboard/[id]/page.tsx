@@ -1,4 +1,4 @@
-'use client'
+'use client';
 
 import { Suspense, useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,6 +8,7 @@ import { motion } from 'framer-motion';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Switch } from "@/components/ui/switch";
 import { useTheme } from "next-themes";
+import { use } from 'react';  // Importa use
 
 function DashboardSkeleton() {
   return (
@@ -33,7 +34,6 @@ function DashboardSkeleton() {
 const MotionCard = motion(Card);
 
 function DashboardContent({ id }: { id: string }) {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [dashboardData, setDashboardData] = useState<any>(null);
   const { setTheme, theme } = useTheme();
 
@@ -179,11 +179,10 @@ export default function DashboardPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
+  const resolvedParams = use(params);  // Resuelve la promesa
   return (
     <Suspense fallback={<DashboardSkeleton />}>
-      {/* @ts-expect-error Async Server Component */}
-      <DashboardContent id={params.id} />
+      <DashboardContent id={resolvedParams.id} />
     </Suspense>
   );
 }
-
