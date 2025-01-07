@@ -6,13 +6,16 @@ import { OkPacket } from 'mysql2/promise';
 // GET: Obtener todos los textos
 export async function GET() {
   try {
-    const textos = await executeQuery<Texto[]>('SELECT * FROM textos');
+    const textos = await executeQuery<Texto[]>(
+      'SELECT texto_titulo, texto_info, texto_contas, texto_suporte FROM textos'
+    );
     return NextResponse.json(textos);
   } catch (error) {
     console.error('Error al obtener textos:', error);
     return NextResponse.json({ message: 'Error interno del servidor' }, { status: 500 });
   }
 }
+
 
 // POST: Crear un nuevo texto
 export async function POST(req: Request) {

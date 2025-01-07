@@ -9,6 +9,13 @@ export interface Contact {
   foto: string;
   saldo: number;
   saldoadd?: number;
+  bloqueado: number;
+}
+
+export interface MessageTemplate {
+  id: number;
+  mainid: number;
+  mensagem: string;
 }
 
 export interface ContactUpdate {
@@ -59,13 +66,15 @@ export interface TextoInput {
 }
 
 export interface Gift {
-  id: number
-  mainid: number
-  valor: number
-  numero: string
-  resgatado: number
-  codigo: string
+  id: number;
+  mainid: number;
+  valor: number;
+  numero: string;
+  codigo: string;
+  resgatado: number;
+  created_at?: string;
 }
+
 
 export interface Category {
   id: number;
@@ -79,9 +88,12 @@ export interface Category {
 }
 
 export interface Product {
+  descricao: any;
   id: number;
   categoria: number;
   mainid: number;
+  dados: string;
+  tipoConta: string;
   produto: string;
   disponivel: number;
   email: string;

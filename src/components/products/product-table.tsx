@@ -11,7 +11,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, Edit, Trash2, AlertCircle } from "lucide-react";
+import { Search, Edit, Trash2, AlertCircle, Eye, Check, X } from "lucide-react";
 import { ProductDialog } from "./product-dialog";
 import {
   AlertDialog,
@@ -24,7 +24,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { motion, AnimatePresence } from "framer-motion";
-import { Pagination } from "@/components/shared/pagination"; // Importa el componente de paginación
+import { Pagination } from "@/components/shared/pagination";
 
 interface ProductTableProps {
   products: Product[] | null | undefined;
@@ -38,9 +38,11 @@ export function ProductTable({ products, onDelete, onUpdate }: ProductTableProps
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [productToDelete, setProductToDelete] = useState<number | null>(null);
+  const [selectedItems, setSelectedItems] = useState<number[]>([]);
+  const [showTextDialog, setShowTextDialog] = useState(false);
   
-  const ITEMS_PER_PAGE = 5; // Número de productos por página
-  const [currentPage, setCurrentPage] = useState(1); // Página actual
+  const ITEMS_PER_PAGE = 5;
+  const [currentPage, setCurrentPage] = useState(1);
 
   const filteredProducts = Array.isArray(products)
     ? products.filter((product) =>
@@ -77,24 +79,33 @@ export function ProductTable({ products, onDelete, onUpdate }: ProductTableProps
     setIsDialogOpen(false);
   };
 
-  // Función para generar el rango de páginas visibles
-  const getPaginationRange = (currentPage: number, totalPages: number) => {
-    const delta = 2; // Número de páginas a mostrar antes y después de la página actual
-    const range = [];
-    
-    // Mostrar la primera página
-    range.push(1);
+  const handleSelectAll = () => {
+    const allIds = paginatedProducts.map(product => product.id);
+    setSelectedItems(allIds);
+  };
 
-    // Mostrar páginas cercanas al currentPage
+  const handleDeselectAll = () => {
+    setSelectedItems([]);
+  };
+
+  const handleToggleSelect = (id: number) => {
+    setSelectedItems(prev => 
+      prev.includes(id) 
+        ? prev.filter(item => item !== id)
+        : [...prev, id]
+    );
+  };
+
+  const getPaginationRange = (currentPage: number, totalPages: number) => {
+    const delta = 2;
+    const range = [];
+    range.push(1);
     for (let i = Math.max(2, currentPage - delta); i <= Math.min(totalPages - 1, currentPage + delta); i++) {
       range.push(i);
     }
-
-    // Mostrar la última página si no está incluida
     if (totalPages > 1 && range[range.length - 1] !== totalPages) {
       range.push(totalPages);
     }
-
     return range;
   };
 
@@ -105,7 +116,7 @@ export function ProductTable({ products, onDelete, onUpdate }: ProductTableProps
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="flex items-center justify-between"
+        className="flex items-center justify-between gap-4"
       >
         <div className="relative w-72">
           <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -115,6 +126,35 @@ export function ProductTable({ products, onDelete, onUpdate }: ProductTableProps
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
+        </div>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleSelectAll}
+            className="flex items-center gap-2"
+          >
+            <Check className="h-4 w-4" />
+            Marcar todos
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleDeselectAll}
+            className="flex items-center gap-2"
+          >
+            <X className="h-4 w-4" />
+            Desmarcar todos
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowTextDialog(true)}
+            className="flex items-center gap-2"
+          >
+            <Eye className="h-4 w-4" />
+            Ver texto
+          </Button>
         </div>
       </motion.div>
 
@@ -126,7 +166,11 @@ export function ProductTable({ products, onDelete, onUpdate }: ProductTableProps
         <Table>
           <TableHeader>
             <TableRow className="bg-muted/50">
-              <TableHead className="font-semibold">#</TableHead>
+              <TableHead className="w-12">
+                <div className="flex items-center justify-center">
+                  #
+                </div>
+              </TableHead>
               <TableHead className="font-semibold">Produto</TableHead>
               <TableHead className="font-semibold">Categoria</TableHead>
               <TableHead className="font-semibold">Status</TableHead>
@@ -143,17 +187,32 @@ export function ProductTable({ products, onDelete, onUpdate }: ProductTableProps
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     exit={{ opacity: 0, x: 20 }}
-                    className="group hover:bg-muted/50 transition-colors duration-200"
+                    className={`group hover:bg-muted/50 transition-colors duration-200 ${
+                      selectedItems.includes(product.id) ? 'bg-muted/30' : ''
+                    }`}
+                    onClick={() => handleToggleSelect(product.id)}
                   >
-                    <TableCell>{product.id}</TableCell>
-                    <TableCell className="font-medium">{product.produto}</TableCell>
-                    <TableCell>{product.categoria}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center justify-center">
+                        {product.id}
+                      </div>
+                    </TableCell>
+                    <TableCell className="font-medium">
+                      <div className="flex items-center gap-2">
+                        {product.produto}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        {product.categoria}
+                      </div>
+                    </TableCell>
                     <TableCell>
                       <Badge
                         variant={product.disponivel === 1 ? "success" : "secondary"}
                         className="transition-all duration-300 hover:scale-105"
                       >
-                        {product.disponivel === 1 ? "Disponível" : "Indisponível"}
+                        {product.disponivel === 1 ? "Disponível" : "Vendida"}
                       </Badge>
                     </TableCell>
                     <TableCell>{product.tipo}</TableCell>
@@ -162,7 +221,10 @@ export function ProductTable({ products, onDelete, onUpdate }: ProductTableProps
                         <Button
                           size="sm"
                           variant="secondary"
-                          onClick={() => handleEdit(product)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleEdit(product);
+                          }}
                           className="transition-all duration-200 hover:scale-105"
                         >
                           <Edit className="h-4 w-4" />
@@ -170,7 +232,10 @@ export function ProductTable({ products, onDelete, onUpdate }: ProductTableProps
                         <Button
                           size="sm"
                           variant="destructive"
-                          onClick={() => handleDeleteClick(product.id)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteClick(product.id);
+                          }}
                           className="transition-all duration-200 hover:scale-105"
                         >
                           <Trash2 className="h-4 w-4" />
@@ -228,7 +293,7 @@ export function ProductTable({ products, onDelete, onUpdate }: ProductTableProps
         <Pagination
           currentPage={currentPage}
           totalPages={totalPages}
-          pageRange={pageRange} // Usamos el rango de páginas calculado
+          pageRange={pageRange}
           onPageChange={setCurrentPage}
         />
       )}

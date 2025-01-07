@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -18,8 +19,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { motion } from "framer-motion";
-import { Loader2 } from "lucide-react";
+import { Loader2, Smile } from "lucide-react";
+import data from '@emoji-mart/data';
+import Picker from '@emoji-mart/react';
 
 interface ProductDialogProps {
   product: Product | null;
@@ -41,9 +49,12 @@ export function ProductDialog({
     email: "",
     senha: "",
     tipo: "",
+    dados: "",
+    tipoConta: "padrão"
   });
   const [loading, setLoading] = useState(false);
   const [categories, setCategories] = useState<{ id: number; nome: string }[]>([]);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
 
   useEffect(() => {
     if (open) {
@@ -54,6 +65,17 @@ export function ProductDialog({
   useEffect(() => {
     if (product) {
       setFormData(product);
+    } else {
+      setFormData({
+        produto: "",
+        categoria: 0,
+        disponivel: 0,
+        email: "",
+        senha: "",
+        tipo: "",
+        dados: "",
+        tipoConta: "padrão"
+      });
     }
   }, [product]);
 
@@ -67,23 +89,28 @@ export function ProductDialog({
     }
   };
 
+  const handleEmojiSelect = (emoji: any) => {
+    setFormData(prev => ({
+      ...prev,
+      produto: prev.produto + emoji.native
+    }));
+    setShowEmojiPicker(false);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     try {
       if (product) {
-        // Editar producto
         await onSave({ ...product, ...formData } as Product);
       } else {
-        // Crear nuevo producto
-        await onSave({ ...formData, id: Date.now() } as Product);  // Puedes ajustar el id según tu backend
+        await onSave({ ...formData, id: Date.now() } as Product);
       }
       onOpenChange(false);
     } finally {
       setLoading(false);
     }
   };
-  
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -110,14 +137,34 @@ export function ProductDialog({
             transition={{ delay: 0.1 }}
           >
             <Label htmlFor="produto">Produto</Label>
-            <Input
-              id="produto"
-              value={formData.produto}
-              onChange={(e) =>
-                setFormData({ ...formData, produto: e.target.value })
-              }
-              className="transition-all duration-200 focus:ring-2 focus:ring-primary/20"
-            />
+            <div className="flex gap-2">
+              <Input
+                id="produto"
+                value={formData.produto}
+                onChange={(e) =>
+                  setFormData({ ...formData, produto: e.target.value })
+                }
+                className="transition-all duration-200 focus:ring-2 focus:ring-primary/20"
+              />
+              <Popover open={showEmojiPicker} onOpenChange={setShowEmojiPicker}>
+                <PopoverTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="px-3"
+                  >
+                    <Smile className="h-4 w-4" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-full p-0" align="end">
+                  <Picker
+                    data={data}
+                    onEmojiSelect={handleEmojiSelect}
+                    theme="light"
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
           </motion.div>
 
           <motion.div
@@ -156,16 +203,21 @@ export function ProductDialog({
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.3 }}
           >
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              type="email"
-              value={formData.email}
-              onChange={(e) =>
-                setFormData({ ...formData, email: e.target.value })
+            <Label htmlFor="tipoConta">Tipo de Conta</Label>
+            <Select
+              value={formData.tipoConta}
+              onValueChange={(value) =>
+                setFormData({ ...formData, tipoConta: value })
               }
-              className="transition-all duration-200 focus:ring-2 focus:ring-primary/20"
-            />
+            >
+              <SelectTrigger className="transition-all duration-200 hover:bg-accent">
+                <SelectValue placeholder="Selecione o tipo de conta" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="padrão">Padrão</SelectItem>
+                <SelectItem value="telas">Telas</SelectItem>
+              </SelectContent>
+            </Select>
           </motion.div>
 
           <motion.div
@@ -174,15 +226,15 @@ export function ProductDialog({
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.4 }}
           >
-            <Label htmlFor="senha">Senha</Label>
-            <Input
-              id="senha"
-              type="password"
-              value={formData.senha}
+            <Label htmlFor="dados">Dados das Contas</Label>
+            <Textarea
+              id="dados"
+              placeholder="Digite as contas no formato email|senha"
+              value={formData.dados}
               onChange={(e) =>
-                setFormData({ ...formData, senha: e.target.value })
+                setFormData({ ...formData, dados: e.target.value })
               }
-              className="transition-all duration-200 focus:ring-2 focus:ring-primary/20"
+              className="min-h-[100px] transition-all duration-200 focus:ring-2 focus:ring-primary/20"
             />
           </motion.div>
 
@@ -220,14 +272,25 @@ export function ProductDialog({
             />
           </motion.div>
 
+          {formData.disponivel === 0 && (
+            <motion.div
+              className="text-sm text-blue-500"
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.7 }}
+            >
+              Etiqueta: Vendido
+            </motion.div>
+          )}
+
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.7 }}
+            transition={{ delay: 0.8 }}
           >
             <Button
               type="submit"
-              className="w-full transition-all duration-200 hover:scale-[1.02] disabled:opacity-50"
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white transition-all duration-200 hover:scale-[1.02] disabled:opacity-50"
               disabled={loading}
             >
               {loading ? (

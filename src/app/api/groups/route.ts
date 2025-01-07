@@ -3,7 +3,7 @@ import { pool } from '@/features/data/actions/db'
 
 export async function GET() {
   try {
-    const [rows] = await pool.query('SELECT * FROM grupos ORDER BY nome ASC')
+    const [rows] = await pool.query('SELECT * FROM grupos')
     console.log('Fetched groups:', rows)
     return NextResponse.json(rows)
   } catch (error) {

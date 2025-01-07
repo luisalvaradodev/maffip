@@ -2,32 +2,22 @@ import { NextResponse } from 'next/server';
 import { executeQuery } from '@/features/data/actions/db';
 import { OkPacket } from 'mysql2';
 
-export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url);
-  const page = parseInt(searchParams.get('page') || '1');
-  const limit = parseInt(searchParams.get('limit') || '10');
-  const offset = (page - 1) * limit;
-
+export async function GET() {
   try {
-    const [products, totalCount] = await Promise.all([
-      executeQuery(`
-        SELECT p.*, c.nome as categoria_nome 
-        FROM produtos p 
-        LEFT JOIN categoria c ON p.categoria = c.id
-        LIMIT ? OFFSET ?
-      `, [limit, offset]),
-      executeQuery('SELECT COUNT(*) as count FROM produtos')
-    ]);
+    const products = await executeQuery(`
+      SELECT p.*, c.nome AS categoria_nome 
+      FROM produtos p
+      LEFT JOIN categoria c ON p.categoria = c.id
+    `);
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const total = (totalCount as any)[0].count;
-
-    return NextResponse.json({ products, total });
+    return NextResponse.json({ products });
   } catch (error) {
     console.error('Error fetching products:', error);
     return NextResponse.json({ error: 'Error fetching products' }, { status: 500 });
   }
 }
+
+
 
 export async function POST(request: Request) {
   try {
