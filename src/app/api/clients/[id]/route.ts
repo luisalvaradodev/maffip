@@ -6,24 +6,35 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    const client = await executeQuery(`
-      SELECT c.*, 
-             COUNT(s.id) as total_purchases,
-             SUM(s.valor) as total_spent
-      FROM contatos c
-      LEFT JOIN store s ON c.numero = s.numero
-      WHERE c.id = ?
-      GROUP BY c.id
-    `, [params.id]);
+    // Consulta SQL para obtener un cliente por ID
+    const query = `
+      SELECT 
+        s.id,
+        s.numero,
+        s.nome,
+        s.data as validade,
+        s.valor,
+        s.texto as produto
+      FROM store s
+      WHERE s.id = ?
+    `;
 
-    if (!client) {
+    // Ejecutar la consulta
+    const client = await executeQuery(query, [params.id]);
+
+    // Verificar si se encontró el cliente
+    if (!client || client.length === 0) {
       return NextResponse.json({ error: 'Client not found' }, { status: 404 });
     }
 
-    return NextResponse.json(client);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    // Devolver el cliente encontrado
+    return NextResponse.json(client[0]);
   } catch (error) {
-    return NextResponse.json({ error: 'Failed to fetch client' }, { status: 500 });
+    console.error('Error en GET /api/clients/[id]:', error);
+    return NextResponse.json(
+      { error: 'Failed to fetch client', details: error.message },
+      { status: 500 }
+    );
   }
 }
 
@@ -32,19 +43,40 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   try {
+    // Obtener el cuerpo de la solicitud
     const body = await request.json();
-    const { numero, nome, saldo, bloqueado } = body;
+    const { numero, nome, valor, validade, produto } = body; // Cambiar "texto" a "produto"
 
-    await executeQuery(`
-      UPDATE contatos
-      SET numero = ?, nome = ?, saldo = ?, bloqueado = ?
+    // Consulta SQL para actualizar un cliente
+    const query = `
+      UPDATE store
+      SET 
+        numero = ?,
+        nome = ?,
+        valor = ?,
+        data = ?,
+        texto = ?
       WHERE id = ?
-    `, [numero, nome, saldo, bloqueado, params.id]);
+    `;
 
+    // Ejecutar la consulta
+    await executeQuery(query, [
+      numero,
+      nome,
+      valor,
+      validade,
+      produto, // Cambiar "texto" a "produto"
+      params.id,
+    ]);
+
+    // Devolver una respuesta exitosa
     return NextResponse.json({ message: 'Client updated successfully' });
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   } catch (error) {
-    return NextResponse.json({ error: 'Failed to update client' }, { status: 500 });
+    console.error('Error en PUT /api/clients/[id]:', error);
+    return NextResponse.json(
+      { error: 'Failed to update client', details: error.message },
+      { status: 500 }
+    );
   }
 }
 
@@ -53,10 +85,22 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    await executeQuery('DELETE FROM contatos WHERE id = ?', [params.id]);
+    // Consulta SQL para eliminar un cliente por ID
+    const query = `
+      DELETE FROM store
+      WHERE id = ?
+    `;
+
+    // Ejecutar la consulta
+    await executeQuery(query, [params.id]);
+
+    // Devolver una respuesta exitosa
     return NextResponse.json({ message: 'Client deleted successfully' });
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   } catch (error) {
-    return NextResponse.json({ error: 'Failed to delete client' }, { status: 500 });
+    console.error('Error en DELETE /api/clients/[id]:', error);
+    return NextResponse.json(
+      { error: 'Failed to delete client', details: error.message },
+      { status: 500 }
+    );
   }
 }

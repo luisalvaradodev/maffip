@@ -77,36 +77,53 @@ export interface Category {
   tipo: string;
 }
 
-export interface Product {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  descricao: any;
-  id: number;
-  categoria: number;
-  mainid: number;
-  dados: string;
-  tipoConta: string;
-  produto: string;
-  disponivel: number;
-  email: string;
-  senha: string;
-  dono: string;
-  cc: string;
-  gg: string;
-  tipo: string;
-}
-
 export interface Contact extends RowDataPacket {
   id: number;
   numero: string;
   nome: string;
   foto: string | null;
   mainid: number;
-  saldo: string | number;
+  saldo: number;
   saldoadd: string | null;
   bloqueado: number;
   comprando: number;
+  produto: string;
+  valor: number;
+  validade: string;
   total_purchases?: number;
   total_spent?: number;
+  ultima_compra: string;
+  total_payments: number;
+  ultimo_pagamento: string;
+  texto: string;
+}
+
+export interface Product {
+  id: number;
+  categoria?: number;
+  mainid: number;
+  produto: string;
+  disponivel?: number;
+  email?: string;
+  senha?: string;
+  dono?: string;
+  cc?: string;
+  gg?: string;
+  tipo?: string;
+  valor: number;
+}
+
+export interface Purchase {
+  id: number;
+  numero: string;
+  mainid: number;
+  texto: string;
+  id_produto: string;
+  data: string;
+  valor: number;
+  nome: string;
+  notificado: number;
+  vencido: number;
 }
 
 export interface Store {
@@ -130,11 +147,11 @@ export interface Payment {
   nome: string;
   status: string;
   mainid: number;
-  data: Date;
-  tokenmp: string | null;
-  instance: string | null;
-  notas: string | null;
-  tipo: string | null;
+  data: string;
+  tokenmp: string;
+  instance: string;
+  notas: string;
+  tipo: string;
 }
 
 export interface DataTableProps<TData, TValue> {
