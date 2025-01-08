@@ -1,16 +1,6 @@
 import { RowDataPacket } from "mysql2";
 
 // Tipos para contactos
-export interface Contact {
-  id: number;
-  mainid: string;
-  numero: string;
-  nome: string;
-  foto: string;
-  saldo: number;
-  saldoadd?: number;
-  bloqueado: number;
-}
 
 export interface MessageTemplate {
   id: number;
@@ -88,6 +78,7 @@ export interface Category {
 }
 
 export interface Product {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   descricao: any;
   id: number;
   categoria: number;
@@ -102,6 +93,48 @@ export interface Product {
   cc: string;
   gg: string;
   tipo: string;
+}
+
+export interface Contact extends RowDataPacket {
+  id: number;
+  numero: string;
+  nome: string;
+  foto: string | null;
+  mainid: number;
+  saldo: string | number;
+  saldoadd: string | null;
+  bloqueado: number;
+  comprando: number;
+  total_purchases?: number;
+  total_spent?: number;
+}
+
+export interface Store {
+  id: number;
+  numero: string;
+  mainid: number;
+  texto: string;
+  id_produto: string;
+  data: Date;
+  valor: number;
+  nome: string;
+  notificado: number | null;
+  vencido: number | null;
+}
+
+export interface Payment {
+  id: number;
+  idpag: string;
+  numero: string;
+  valor: string;
+  nome: string;
+  status: string;
+  mainid: number;
+  data: Date;
+  tokenmp: string | null;
+  instance: string | null;
+  notas: string | null;
+  tipo: string | null;
 }
 
 export interface DataTableProps<TData, TValue> {

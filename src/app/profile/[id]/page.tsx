@@ -2,25 +2,51 @@
 
 import React, { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
+import { useTheme } from 'next-themes';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { UserProfile } from '@/features/data/types/index';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { PencilIcon, UserIcon, Cog8ToothIcon, StarIcon, ShieldCheckIcon, InboxIcon } from '@heroicons/react/24/solid'; // Más iconos
-import { Badge } from "@/components/ui/badge"; // Asumiendo que tienes un componente Badge
-import { useToast } from "@/hooks/use-toast"; // Importar el hook para el toast
-import { motion } from 'framer-motion'; // Para animaciones suaves
+import { User, Star, BadgeCheck, Wallet, Key, Mail, ImageIcon, Edit3, Save } from 'lucide-react';
+import { Badge } from "@/components/ui/badge";
+import { useToast } from "@/hooks/use-toast";
+import { motion, AnimatePresence } from 'framer-motion';
+import { Progress } from "@/components/ui/progress";
+import { Skeleton } from "@/components/ui/skeleton";
+
+const fadeIn = {
+  initial: { opacity: 0, y: 20 },
+  animate: { opacity: 1, y: 0 },
+  exit: { opacity: 0, y: -20 },
+  transition: { duration: 0.3 }
+};
+
+const containerVariants = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1
+    }
+  }
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, x: -20 },
+  show: { opacity: 1, x: 0 }
+};
 
 export default function ProfilePage() {
   const params = useParams();
-  const { toast } = useToast(); // Usar el hook useToast
+  const { toast } = useToast();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [isEditing, setIsEditing] = useState(false); // Controlar si se está editando
+  const [isEditing, setIsEditing] = useState(false);
   const router = useRouter();
   const [loading, setLoading] = useState(true);
+  const [saveProgress, setSaveProgress] = useState(0);
+  const { theme, setTheme } = useTheme();
 
   useEffect(() => {
     async function fetchProfile() {
@@ -52,285 +78,249 @@ export default function ProfilePage() {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!profile) return;
     const { name, value } = e.target;
-    setProfile({ ...profile, [name]: value });
+    setProfile(prev => ({
+      ...prev!,
+      [name]: value
+    }));
   };
 
   const handleSaveChanges = async () => {
     if (!profile) return;
 
     try {
+      setSaveProgress(25);
       const res = await fetch(`/api/profile`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(profile),
       });
 
+      setSaveProgress(75);
+
       if (!res.ok) {
         const errorData = await res.json();
         throw new Error(errorData.error || 'Failed to update profile');
       }
 
-      setIsEditing(false);  // Disable editing mode after save
-      toast({
-        title: "Profile updated successfully!",
-        description: "Your profile changes have been saved.",
-        variant: 'default', // You can customize the variant, e.g., 'success', 'error', etc.
-      });
-    } catch (error) {
-      console.error('Error updating profile:', error);
-      toast({
-        title: "Failed to update profile",
-        description: "There was an error while updating your profile. Please try again.",
-        variant: 'destructive', // Customize for errors
-      });
-    }
-  };
+      setSaveProgress(100);
+      setIsEditing(false);
 
-  const toggleEditMode = () => {
-    setIsEditing(!isEditing);  // Toggle the editing state
+      toast({
+        title: "Success!",
+        description: "Profile updated successfully",
+        variant: 'default',
+      });
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update profile",
+        variant: 'destructive',
+      });
+    } finally {
+      setTimeout(() => setSaveProgress(0), 1000);
+    }
   };
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-screen bg-gray-100">
-        <div className="text-gray-900 text-2xl animate-pulse">Loading...</div>
+      <div className={`min-h-screen ${theme === 'dark' ? 'bg-gray-900' : 'bg-gray-100'} p-8 transition-colors duration-300`}>
+        <div className="max-w-4xl mx-auto space-y-6">
+          <Skeleton className="h-48 w-full rounded-xl" />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Skeleton className="h-32 rounded-lg" />
+            <Skeleton className="h-32 rounded-lg" />
+          </div>
+        </div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="flex justify-center items-center h-screen bg-gray-100">
-        <Card className="max-w-lg w-full shadow-md rounded-lg bg-red-50">
-          <CardContent className="p-6 text-center">
-            <p className="text-gray-700 text-lg font-bold">{error}</p>
-            <Button className="mt-4 bg-gray-600 text-white" onClick={() => router.push('/login')}>
+      <motion.div 
+        initial="initial"
+        animate="animate"
+        exit="exit"
+        variants={fadeIn}
+        className={`min-h-screen ${theme === 'dark' ? 'bg-gray-900' : 'bg-gray-100'} flex items-center justify-center p-4 transition-colors duration-300`}
+      >
+        <Card className="max-w-lg w-full">
+          <CardContent className="p-6 text-center space-y-4">
+            <motion.div 
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ type: 'spring', stiffness: 260, damping: 20 }}
+              className="text-red-500 text-6xl mb-4"
+            >
+              ⚠️
+            </motion.div>
+            <h2 className="text-2xl font-bold">Error</h2>
+            <p className="text-gray-600 dark:text-gray-400">{error}</p>
+            <Button 
+              className="mt-4 bg-primary hover:bg-primary/90 text-primary-foreground transition-all duration-300"
+              onClick={() => router.push('/login')}
+            >
               Back to Login
             </Button>
           </CardContent>
         </Card>
-      </div>
+      </motion.div>
     );
   }
-
-  if (!profile) {
-    return (
-      <div className="flex justify-center items-center h-screen bg-gray-50">
-        <div className="text-black text-lg">No profile found</div>
-      </div>
-    );
-  }
-
-  // Determine status badge color
-  const statusColor = profile.status === 'active' ? 'bg-green-500' : 'bg-red-500';
 
   return (
-    <div className="min-h-screen bg-white text-gray-900 p-10 flex flex-col items-center">
-      <div className="w-full max-w-4xl space-y-4">
+    <motion.div
+      initial="hidden"
+      animate="show"
+      variants={containerVariants}
+      className="min-h-screen p-6 md:p-10 transition-colors duration-300"
+    >
+      <div className="max-w-4xl mx-auto space-y-6">
         {/* Profile Header */}
-        <Card className="shadow-lg rounded-lg bg-white p-6">
-          <CardHeader className="flex items-center justify-between p-6 bg-gradient-to-r from-blue-600 via-indigo-500 to-purple-600 rounded-lg">
-            <div className="flex items-center space-x-4">
-              <Avatar className="h-20 w-20 border-4 border-white shadow-lg">
-                <AvatarImage src={profile.img} alt={profile.login} />
-                <AvatarFallback>{profile.login[0].toUpperCase()}</AvatarFallback>
-              </Avatar>
-              <div className="flex flex-col space-y-2">
-                <CardTitle className="text-2xl font-semibold text-white">{profile.login}</CardTitle>
-                <p className="text-md text-gray-200">{profile.permissao}</p>
-                {/* Status Badge */}
-                <Badge className={`px-3 py-1 rounded-full text-white ${statusColor}`}>
-                  {profile.status === 'active' ? 'Active' : 'Inactive'}
-                </Badge>
+        <motion.div variants={itemVariants}>
+          <Card className="border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden transition-all duration-300 hover:shadow-md">
+            <CardHeader className="relative p-6">
+              <div className={`absolute inset-0 ${theme === 'dark' ? 'bg-gradient-to-r from-blue-900/20 via-purple-900/20 to-pink-900/20' : 'bg-gradient-to-r from-blue-100 via-purple-100 to-pink-100'} rounded-t-lg transition-colors duration-300`} />
+              <div className="relative flex flex-col md:flex-row items-center justify-between space-y-4 md:space-y-0">
+                <div className="flex flex-col md:flex-row items-center md:space-x-6">
+                  <motion.div
+                    whileHover={{ scale: 1.05 }}
+                    transition={{ type: "spring", stiffness: 300 }}
+                  >
+                    <Avatar className="h-24 w-24 ring-4 ring-primary/20 shadow-xl transition-all duration-300 hover:ring-primary/40">
+                      <AvatarImage src={profile?.img} />
+                      <AvatarFallback>
+                        <User className="h-12 w-12" />
+                      </AvatarFallback>
+                    </Avatar>
+                  </motion.div>
+                  <div className="text-center md:text-left space-y-2">
+                    <CardTitle className="text-3xl font-bold truncate max-w-[200px] md:max-w-[300px]">
+                      {profile?.login}
+                    </CardTitle>
+                    <div className="flex flex-wrap gap-2 justify-center md:justify-start">
+                      <Badge variant="secondary" className="bg-primary/20 text-primary transition-colors duration-300 hover:bg-primary/30">
+                        <BadgeCheck className="w-4 h-4 mr-1" />
+                        Verified
+                      </Badge>
+                      <Badge variant="secondary" className="bg-yellow-500 text-yellow-900 dark:bg-yellow-300 dark:text-yellow-800 transition-colors duration-300 hover:bg-yellow-400 dark:hover:bg-yellow-200">
+                        <Star className="w-4 h-4 mr-1 animate-pulse" />
+                        <span className="truncate max-w-[100px]">{profile?.bonus} Points</span>
+                      </Badge>
+                    </div>
+                  </div>
+                </div>
+                <motion.div
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <Button
+                    onClick={() => setIsEditing(!isEditing)}
+                    className="bg-primary hover:bg-primary/90 text-primary-foreground transition-all duration-300 shadow-sm hover:shadow-md text-sm px-3 py-1 rounded-md"
+                  >
+                    {isEditing ? (
+                      <>
+                        <Edit3 className="w-4 h-4 mr-2" />
+                        Cancel
+                      </>
+                    ) : (
+                      <>
+                        <Edit3 className="w-4 h-4 mr-2" />
+                        Edit Profile
+                      </>
+                    )}
+                  </Button>
+                </motion.div>
               </div>
-            </div>
+            </CardHeader>
+          </Card>
+        </motion.div>
 
-            {/* Medals & Badges Section */}
-            <div className="flex items-center space-x-4">
-              {/* Star Medals */}
-              {profile.bonus && (
-                <Badge className="flex items-center space-x-2 bg-yellow-400 text-white py-1 px-3 rounded-full">
-                  <StarIcon className="w-5 h-5 text-yellow-600" />
-                  <span>Bonus: {profile.bonus}</span>
-                </Badge>
-              )}
-              {/* Shield Badge for verified or protected status */}
-              <Badge className="flex items-center space-x-2 bg-indigo-600 text-white py-1 px-3 rounded-full">
-                <ShieldCheckIcon className="w-5 h-5 text-indigo-300" />
-                <span>Verified</span>
-              </Badge>
-            </div>
-          </CardHeader>
-        </Card>
-
-        {/* Main Profile Card */}
-        <Card className="shadow-md rounded-lg bg-white p-6">
-          <Tabs defaultValue="overview" className="w-full mt-4">
-            <TabsList className="flex justify-start space-x-4 p-2 bg-gray-100 rounded-lg">
-              <TabsTrigger value="overview" className="flex items-center space-x-2 p-2 rounded-md hover:bg-indigo-200">
-                <UserIcon className="w-5 h-5 text-gray-600" />
-                <span className="text-sm font-medium">Overview</span>
-              </TabsTrigger>
-              <TabsTrigger value="edit" className="flex items-center space-x-2 p-2 rounded-md hover:bg-indigo-200">
-                <PencilIcon className="w-5 h-5 text-gray-600" />
-                <span className="text-sm font-medium">Edit</span>
-              </TabsTrigger>
-              <TabsTrigger value="settings" className="flex items-center space-x-2 p-2 rounded-md hover:bg-indigo-200">
-                <Cog8ToothIcon className="w-5 h-5 text-gray-600" />
-                <span className="text-sm font-medium">Settings</span>
-              </TabsTrigger>
-              <TabsTrigger value="notifications" className="flex items-center space-x-2 p-2 rounded-md hover:bg-indigo-200">
-                <InboxIcon className="w-5 h-5 text-gray-600" />
-                <span className="text-sm font-medium">Notifications</span>
-              </TabsTrigger>
-            </TabsList>
-
-            {/* Overview Tab */}
-            <TabsContent value="overview">
+        {/* Main Content */}
+        <motion.div variants={itemVariants}>
+          <Card className="border border-gray-200 dark:border-gray-700 shadow-sm transition-all duration-300 hover:shadow-md">
+            <CardContent className="p-6">
               <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.5 }}
-                className="space-y-4"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.3 }}
+                className="grid grid-cols-1 md:grid-cols-2 gap-6"
               >
-                <Card className="shadow-md p-6 rounded-lg bg-gray-50">
-                  <CardHeader>
-                    <CardTitle className="text-lg font-semibold text-gray-700">User Details</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      <div className="space-y-1">
-                        <p className="text-sm text-gray-500">Username:</p>
-                        <Input
-                          type="text"
-                          name="login"
-                          value={profile.login}
-                          onChange={handleInputChange}
-                          disabled
-                          className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500"
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <p className="text-sm text-gray-500">Permission:</p>
-                        <Input
-                          type="number"
-                          name="permissao"
-                          value={profile.permissao || ''}
-                          onChange={handleInputChange}
-                          disabled
-                          className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500"
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <p className="text-sm text-gray-500">Bonus:</p>
-                        <Input
-                          type="number"
-                          name="bonus"
-                          value={profile.bonus || ''}
-                          onChange={handleInputChange}
-                          disabled
-                          className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500"
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <p className="text-sm text-gray-500">Token:</p>
-                        <Input
-                          type="text"
-                          name="token"
-                          value={profile.token || ''}
-                          onChange={handleInputChange}
-                          disabled
-                          className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500"
-                        />
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
+                {[
+                  { icon: Mail, label: 'Email', value: profile?.login, key: 'login' },
+                  { icon: Key, label: 'API Token', value: profile?.token, key: 'token' },
+                  { icon: Wallet, label: 'Bonus', value: profile?.bonus, key: 'bonus' },
+                  { icon: ImageIcon, label: 'Avatar URL', value: profile?.img, key: 'img' }
+                ].map((field, index) => (
+                  <motion.div
+                    key={index}
+                    whileHover={{ scale: 1.02 }}
+                    transition={{ type: "spring", stiffness: 300 }}
+                  >
+                    <Card className="bg-card hover:bg-card/90 transition-all duration-300 shadow-sm hover:shadow-md border border-gray-200 dark:border-gray-700">
+                      <CardContent className="p-4">
+                        <div className="flex items-center space-x-3">
+                          <field.icon className="w-5 h-5 text-muted-foreground flex-shrink-0" />
+                          <div className="flex-grow min-w-0">
+                            <p className="text-sm text-muted-foreground">{field.label}</p>
+                            {isEditing ? (
+                              <Input
+                                name={field.key}
+                                value={profile?.[field.key as keyof UserProfile] || ''}
+                                onChange={handleInputChange}
+                                className="mt-1 transition-all duration-300 focus:ring-2 focus:ring-primary"
+                              />
+                            ) : (
+                              <p className="font-medium truncate">
+                                {field.value || 'Not set'}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+                ))}
               </motion.div>
-            </TabsContent>
+              <AnimatePresence>
+                {isEditing && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -20 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <Button
+                      onClick={handleSaveChanges}
+                      className="mt-6 bg-primary hover:bg-primary/90 text-primary-foreground transition-all duration-300 shadow-sm hover:shadow-md text-sm px-4 py-2 rounded-md"
+                    >
+                      <Save className="w-4 h-4 mr-2" />
+                      Save Changes
+                    </Button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </CardContent>
+          </Card>
+        </motion.div>
 
-            {/* Edit Tab */}
-            <TabsContent value="edit">
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.5 }}
-                className="space-y-4"
-              >
-                <Card className="shadow-md p-6 rounded-lg bg-gray-50">
-                  <CardHeader>
-                    <CardTitle className="text-lg font-semibold text-gray-700">Edit User</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      <div className="space-y-1">
-                        <p className="text-sm text-gray-500">Username:</p>
-                        <Input
-                          type="text"
-                          name="login"
-                          value={profile.login}
-                          onChange={handleInputChange}
-                          disabled={!isEditing}
-                          className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500"
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <p className="text-sm text-gray-500">Permission:</p>
-                        <Input
-                          type="text"
-                          name="permissao"
-                          value={profile.permissao || ''}
-                          onChange={handleInputChange}
-                          disabled={!isEditing}
-                          className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500"
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <p className="text-sm text-gray-500">Bonus:</p>
-                        <Input
-                          type="number"
-                          name="bonus"
-                          value={profile.bonus || ''}
-                          onChange={handleInputChange}
-                          disabled={!isEditing}
-                          className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500"
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <p className="text-sm text-gray-500">Token:</p>
-                        <Input
-                          type="text"
-                          name="token"
-                          value={profile.token || ''}
-                          onChange={handleInputChange}
-                          disabled={!isEditing}
-                          className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500"
-                        />
-                      </div>
-                    </div>
-                    <div className="flex space-x-2 mt-4">
-                      {isEditing && (
-                        <Button
-                          onClick={handleSaveChanges}
-                          className="bg-indigo-600 text-white px-4 py-2 hover:bg-indigo-500"
-                        >
-                          Save Changes
-                        </Button>
-                      )}
-                      <Button
-                        onClick={toggleEditMode}
-                        className="bg-gray-600 text-white px-4 py-2 hover:bg-gray-500"
-                      >
-                        {isEditing ? 'Cancel' : 'Edit'}
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            </TabsContent>
-          </Tabs>
-        </Card>
+        {/* Save Progress */}
+        <AnimatePresence>
+          {saveProgress > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.3 }}
+            >
+              <Progress value={saveProgress} className="h-2 transition-all duration-300" />
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
-    </div>
+    </motion.div>
   );
 }
+
