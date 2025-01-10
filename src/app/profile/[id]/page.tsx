@@ -8,7 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { UserProfile } from '@/features/data/types/index';
-import { User, Star, BadgeCheck, Wallet, Key, Mail, ImageIcon, Edit3, Save } from 'lucide-react';
+import { User, Star, BadgeCheck, Wallet, Mail, ImageIcon, Edit3, Save, UserCheck, CreditCard, Key } from 'lucide-react';
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { motion, AnimatePresence } from 'framer-motion';
@@ -51,7 +51,7 @@ export default function ProfilePage() {
   useEffect(() => {
     async function fetchProfile() {
       if (!params.id) {
-        setError('Profile ID is missing');
+        setError('ID do perfil está faltando');
         setLoading(false);
         return;
       }
@@ -60,13 +60,13 @@ export default function ProfilePage() {
         const res = await fetch(`/api/profile?id=${params.id}`);
         if (!res.ok) {
           const errorData = await res.json();
-          throw new Error(errorData.error || 'Failed to fetch profile');
+          throw new Error(errorData.error || 'Falha ao buscar perfil');
         }
         const data = await res.json();
         setProfile(data);
       } catch (error) {
-        console.error('Error fetching profile:', error);
-        setError('Failed to load profile. Please try again later.');
+        console.error('Erro ao buscar perfil:', error);
+        setError('Falha ao carregar perfil. Tente novamente mais tarde.');
       } finally {
         setLoading(false);
       }
@@ -99,22 +99,21 @@ export default function ProfilePage() {
 
       if (!res.ok) {
         const errorData = await res.json();
-        throw new Error(errorData.error || 'Failed to update profile');
+        throw new Error(errorData.error || 'Falha ao atualizar perfil');
       }
 
       setSaveProgress(100);
       setIsEditing(false);
 
       toast({
-        title: "Success!",
-        description: "Profile updated successfully",
+        title: "Sucesso!",
+        description: "Perfil atualizado com sucesso",
         variant: 'default',
       });
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {
       toast({
-        title: "Error",
-        description: "Failed to update profile",
+        title: "Erro",
+        description: "Falha ao atualizar perfil",
         variant: 'destructive',
       });
     } finally {
@@ -155,13 +154,13 @@ export default function ProfilePage() {
             >
               ⚠️
             </motion.div>
-            <h2 className="text-2xl font-bold">Error</h2>
+            <h2 className="text-2xl font-bold">Erro</h2>
             <p className="text-gray-600 dark:text-gray-400">{error}</p>
             <Button 
               className="mt-4 bg-primary hover:bg-primary/90 text-primary-foreground transition-all duration-300"
               onClick={() => router.push('/login')}
             >
-              Back to Login
+              Voltar para o Login
             </Button>
           </CardContent>
         </Card>
@@ -177,7 +176,7 @@ export default function ProfilePage() {
       className="min-h-screen p-6 md:p-10 transition-colors duration-300"
     >
       <div className="max-w-4xl mx-auto space-y-6">
-        {/* Profile Header */}
+        {/* Cabeçalho do Perfil */}
         <motion.div variants={itemVariants}>
           <Card className="border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden transition-all duration-300 hover:shadow-md">
             <CardHeader className="relative p-6">
@@ -202,11 +201,11 @@ export default function ProfilePage() {
                     <div className="flex flex-wrap gap-2 justify-center md:justify-start">
                       <Badge variant="secondary" className="bg-primary/20 text-primary transition-colors duration-300 hover:bg-primary/30">
                         <BadgeCheck className="w-4 h-4 mr-1" />
-                        Verified
+                        Verificado
                       </Badge>
                       <Badge variant="secondary" className="bg-yellow-500 text-yellow-900 dark:bg-yellow-300 dark:text-yellow-800 transition-colors duration-300 hover:bg-yellow-400 dark:hover:bg-yellow-200">
                         <Star className="w-4 h-4 mr-1 animate-pulse" />
-                        <span className="truncate max-w-[100px]">{profile?.bonus} Points</span>
+                        <span className="truncate max-w-[100px]">{profile?.bonus} Pontos</span>
                       </Badge>
                     </div>
                   </div>
@@ -222,12 +221,12 @@ export default function ProfilePage() {
                     {isEditing ? (
                       <>
                         <Edit3 className="w-4 h-4 mr-2" />
-                        Cancel
+                        Cancelar
                       </>
                     ) : (
                       <>
                         <Edit3 className="w-4 h-4 mr-2" />
-                        Edit Profile
+                        Editar Perfil
                       </>
                     )}
                   </Button>
@@ -237,7 +236,7 @@ export default function ProfilePage() {
           </Card>
         </motion.div>
 
-        {/* Main Content */}
+        {/* Conteúdo Principal */}
         <motion.div variants={itemVariants}>
           <Card className="border border-gray-200 dark:border-gray-700 shadow-sm transition-all duration-300 hover:shadow-md">
             <CardContent className="p-6">
@@ -250,9 +249,13 @@ export default function ProfilePage() {
               >
                 {[
                   { icon: Mail, label: 'Email', value: profile?.login, key: 'login' },
-                  { icon: Key, label: 'API Token', value: profile?.token, key: 'token' },
-                  { icon: Wallet, label: 'Bonus', value: profile?.bonus, key: 'bonus' },
-                  { icon: ImageIcon, label: 'Avatar URL', value: profile?.img, key: 'img' }
+                  { icon: Key, label: 'Senha', value: profile?.senha, key: 'senha' },
+                  { icon: ImageIcon, label: 'Imagem do perfil', value: profile?.img, key: 'img' },
+                  { icon: Wallet, label: 'Bônus inicial', value: profile?.bonus, key: 'bonus' },
+                  { icon: UserCheck, label: 'Percentual de afiliado', value: profile?.afiliado, key: 'afiliado' },
+                  { icon: CreditCard, label: 'Token do Mercado Pago', value: profile?.tokenmp, key: 'tokenmp' },
+                  { icon: Wallet, label: 'Bônus PIX em %', value: profile?.bonus_pix, key: 'bonus_pix' },
+                  { icon: Wallet, label: 'Mínimo de bônus', value: profile?.bonus_pix_minimo, key: 'bonus_pix_minimo' },
                 ].map((field, index) => (
                   <motion.div
                     key={index}
@@ -274,7 +277,7 @@ export default function ProfilePage() {
                               />
                             ) : (
                               <p className="font-medium truncate">
-                                {field.value || 'Not set'}
+                                {field.value || 'Não definido'}
                               </p>
                             )}
                           </div>
@@ -297,7 +300,7 @@ export default function ProfilePage() {
                       className="mt-6 bg-primary hover:bg-primary/90 text-primary-foreground transition-all duration-300 shadow-sm hover:shadow-md text-sm px-4 py-2 rounded-md"
                     >
                       <Save className="w-4 h-4 mr-2" />
-                      Save Changes
+                      Salvar Alterações
                     </Button>
                   </motion.div>
                 )}
@@ -306,7 +309,7 @@ export default function ProfilePage() {
           </Card>
         </motion.div>
 
-        {/* Save Progress */}
+        {/* Progresso de Salvamento */}
         <AnimatePresence>
           {saveProgress > 0 && (
             <motion.div
@@ -322,5 +325,4 @@ export default function ProfilePage() {
       </div>
     </motion.div>
   );
-}
-
+};

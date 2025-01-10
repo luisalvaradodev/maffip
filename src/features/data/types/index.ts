@@ -27,14 +27,22 @@ export interface User {
 export interface UserProfile {
   id: number;
   login: string;
-  permissao: number;
-  status: string;
-  expirado: number;
-  img?: string;
-  bonus?: number;
-  bonus_pix?: number;
-  token?: string;
-  lastLogin: string;
+  senha: string;
+  permissao: number | null;
+  img: string | null;
+  token: string | null;
+  jwt: string | null;
+  data: string | null;
+  expirado: number | null;
+  status: string | null;
+  numero: string | null;
+  bot: number | null;
+  bonus: number | null;
+  afiliado: number | null;
+  tokenmp: string | null;
+  dono: number | null;
+  bonus_pix: number;
+  bonus_pix_minimo: number;
 }
 
 // Tipos para textos
