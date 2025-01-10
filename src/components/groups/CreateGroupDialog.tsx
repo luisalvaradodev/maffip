@@ -45,7 +45,7 @@ export function CreateGroupDialog({ open, onOpenChange, onGroupCreated }: Create
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Create New Group</DialogTitle>
         </DialogHeader>
@@ -99,4 +99,3 @@ export function CreateGroupDialog({ open, onOpenChange, onGroupCreated }: Create
     </Dialog>
   )
 }
-

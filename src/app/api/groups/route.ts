@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { pool } from '@/features/data/actions/db'
 
+// Obtener todos los grupos
 export async function GET() {
   try {
     const [rows] = await pool.query('SELECT * FROM grupos')
@@ -12,6 +13,7 @@ export async function GET() {
   }
 }
 
+// Eliminar todos los grupos
 export async function DELETE() {
   try {
     await pool.query('DELETE FROM grupos')
@@ -22,6 +24,7 @@ export async function DELETE() {
   }
 }
 
+// Crear un nuevo grupo
 export async function POST(request: NextRequest) {
   try {
     const { nome, jid, participantes } = await request.json()
@@ -36,3 +39,38 @@ export async function POST(request: NextRequest) {
   }
 }
 
+// Activar/desactivar logging para un grupo específico
+export async function PATCH(request: NextRequest) {
+  try {
+    const { id, log } = await request.json()
+    const [result] = await pool.query(
+      'UPDATE grupos SET log = ? WHERE id = ? RETURNING *',
+      [log, id]
+    )
+    if (result.length === 0) {
+      return NextResponse.json({ error: 'Group not found' }, { status: 404 })
+    }
+    return NextResponse.json(result[0])
+  } catch (error) {
+    console.error('Error toggling logging:', error)
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
+  }
+}
+
+// Activar/desactivar admin logging para un grupo específico
+export async function PUT(request: NextRequest) {
+  try {
+    const { id, log_adm } = await request.json()
+    const [result] = await pool.query(
+      'UPDATE grupos SET log_adm = ? WHERE id = ? RETURNING *',
+      [log_adm, id]
+    )
+    if (result.length === 0) {
+      return NextResponse.json({ error: 'Group not found' }, { status: 404 })
+    }
+    return NextResponse.json(result[0])
+  } catch (error) {
+    console.error('Error toggling admin logging:', error)
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
+  }
+}

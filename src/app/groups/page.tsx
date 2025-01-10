@@ -8,8 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { useToast } from "@/hooks/use-toast"
 import { motion, AnimatePresence } from "framer-motion"
-import { Search, Plus, Loader2 } from 'lucide-react'
-import { CreateGroupDialog } from '@/components/groups/CreateGroupDialog'
+import { Search, Loader2 } from 'lucide-react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
   Select,
@@ -32,7 +31,6 @@ export default function GroupsPage() {
   const [groups, setGroups] = useState<Group[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
-  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
   const [activeTab, setActiveTab] = useState('all')
   const [entriesPerPage, setEntriesPerPage] = useState('10')
   const { toast } = useToast()
@@ -85,6 +83,39 @@ export default function GroupsPage() {
     }
   }
 
+  const handleToggleLog = async (groupId: number, type: 'log' | 'log_adm') => {
+    try {
+      const group = groups.find(g => g.id === groupId)
+      if (!group) throw new Error('Group not found')
+
+      const updatedGroup = { ...group, [type]: !group[type] }
+      const response = await fetch(`/api/groups/${groupId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ [type]: updatedGroup[type] }),
+      })
+
+      if (!response.ok) throw new Error('Failed to update group')
+
+      // Actualizar el estado local de los grupos
+      setGroups(prevGroups =>
+        prevGroups.map(g => (g.id === groupId ? updatedGroup : g))
+      )
+
+      toast({
+        title: "Success",
+        description: `${type === 'log' ? 'Logging' : 'Admin logging'} ${updatedGroup[type] ? 'enabled' : 'disabled'} for ${group.nome}`,
+      })
+    } catch (error) {
+      console.error('Error toggling log:', error)
+      toast({
+        title: "Error",
+        description: "Failed to toggle log. Please try again.",
+        variant: "destructive",
+      })
+    }
+  }
+
   const filteredGroups = groups.filter(group =>
     (group.nome?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
     (group.jid || '').includes(searchTerm)
@@ -109,15 +140,6 @@ export default function GroupsPage() {
         </CardHeader>
         <CardContent>
           <div className="flex flex-col md:flex-row justify-between items-center mb-6 space-y-4 md:space-y-0 md:space-x-4">
-            <motion.div
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              <Button onClick={() => setIsCreateDialogOpen(true)} size="lg" className="w-full md:w-auto">
-                <Plus className="mr-2 h-5 w-5" />
-                Create Group
-              </Button>
-            </motion.div>
             <div className="relative w-full md:w-64">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 transform text-muted-foreground" />
               <Input
@@ -169,6 +191,7 @@ export default function GroupsPage() {
                       onRefresh={fetchGroups}
                       loading={false}
                       entriesPerPage={parseInt(entriesPerPage)}
+                      onToggleLog={handleToggleLog} // Pasar la función de toggle
                     />
                   )}
                 </TabsContent>
@@ -177,12 +200,6 @@ export default function GroupsPage() {
           </Tabs>
         </CardContent>
       </Card>
-      <CreateGroupDialog 
-        open={isCreateDialogOpen} 
-        onOpenChange={setIsCreateDialogOpen}
-        onGroupCreated={fetchGroups}
-      />
     </motion.div>
   )
 }
-
