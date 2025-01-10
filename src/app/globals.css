@@ -91,6 +91,51 @@
   }
 }
 
+/* Animación de olas */
+.wave {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 100px;
+  background: url('/images/wave.png'); /* Usa una imagen de ola */
+  background-size: 1000px 100px;
+  animation: animateWaves 10s linear infinite;
+}
+
+.wave.wave-1 {
+  opacity: 0.7;
+  animation-delay: 0s;
+  bottom: 0;
+}
+
+.wave.wave-2 {
+  opacity: 0.5;
+  animation-delay: -5s;
+  bottom: 10px;
+}
+
+.wave.wave-3 {
+  opacity: 0.3;
+  animation-delay: -2s;
+  bottom: 15px;
+}
+
+.wave.wave-4 {
+  opacity: 0.1;
+  animation-delay: -7s;
+  bottom: 20px;
+}
+
+@keyframes animateWaves {
+  0% {
+    background-position-x: 0;
+  }
+  100% {
+    background-position-x: 1000px;
+  }
+}
+
 /* Custom font classes */
 .font-sans {
   font-family: var(--font-inter), ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";

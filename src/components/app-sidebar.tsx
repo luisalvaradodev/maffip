@@ -1,7 +1,7 @@
 'use client';
 
 import { useUser } from '@/app/context/UserContext';
-import { Home, User, Users, Settings, LayoutDashboard, Backpack, Group, MessagesSquare, Send, UserRoundSearch, QrCode, ChevronLeft, Gift, ChevronDown } from 'lucide-react';
+import { Home, User, Users, Settings, LayoutDashboard, Backpack, Group, MessagesSquare, Send, UserRoundSearch, QrCode, ChevronLeft, Gift, ChevronDown, LogOut } from 'lucide-react';
 import {
   Sidebar,
   SidebarContent,
@@ -12,17 +12,25 @@ import {
   SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
 export function AppSidebar() {
-  const { user, loading } = useUser();
+  const { user, loading, setUser } = useUser();
   const pathname = usePathname();
+  const router = useRouter();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isContactsOpen, setIsContactsOpen] = useState(false);
 
   if (loading || !user) return null;
+
+  const handleLogout = () => {
+    localStorage.removeItem('authToken');
+    setUser(null);
+    router.push('/login');
+  };
 
   const items = [
     { title: 'Admin', url: `/admin`, icon: Home },
@@ -60,6 +68,7 @@ export function AppSidebar() {
       border-r border-gray-100 dark:border-gray-800
       shadow-sm
     `}>
+      {/* Header con estilo macOS */}
       <div className="h-16 flex items-center justify-between px-4 border-b border-gray-100 dark:border-gray-800">
         <AnimatePresence>
           {!isCollapsed && (
@@ -69,15 +78,30 @@ export function AppSidebar() {
               exit={{ opacity: 0, x: -20 }}
               className="flex items-center gap-3"
             >
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-blue-600 to-indigo-600 
-                flex items-center justify-center shadow-lg shadow-blue-500/20">
-                <span className="text-white text-lg font-bold">M</span>
-              </div>
-              <div className="flex flex-col">
-                <span className="text-base font-semibold bg-gradient-to-r from-blue-600 to-indigo-600 
-                  bg-clip-text text-transparent">Maffi</span>
-                <span className="text-[10px] text-gray-400">Dashboard</span>
-              </div>
+              {/* Avatar del usuario con menú desplegable */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="flex items-center gap-3 focus:outline-none">
+                    <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-blue-600 to-indigo-600 
+                      flex items-center justify-center shadow-lg shadow-blue-500/20">
+                      <span className="text-white text-lg font-bold">{user.login.charAt(0)}</span>
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-base font-semibold bg-gradient-to-r from-blue-600 to-indigo-600 
+                        bg-clip-text text-transparent truncate max-w-[120px]">
+                        {user.login}
+                      </span>
+                      <span className="text-[10px] text-gray-400">Dashboard</span>
+                    </div>
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-48">
+                  <DropdownMenuItem onClick={handleLogout} className="cursor-pointer">
+                    <LogOut className="h-4 w-4 mr-2" />
+                    <span>Cerrar sesión</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </motion.div>
           )}
         </AnimatePresence>
@@ -92,6 +116,7 @@ export function AppSidebar() {
         </motion.button>
       </div>
 
+      {/* Contenido del Sidebar */}
       <SidebarContent className="px-2 py-3">
         <SidebarGroup>
           <SidebarGroupContent>
@@ -142,9 +167,9 @@ export function AppSidebar() {
                               exit={{ opacity: 0, height: 0 }}
                               className="pl-6"
                             >
-                              <ul> {/* Envuelve los sub-ítems en un <ul> */}
+                              <ul>
                                 {item.subItems.map((subItem) => (
-                                  <li key={subItem.title}> {/* Usa <li> para los sub-ítems */}
+                                  <li key={subItem.title}>
                                     <SidebarMenuButton asChild>
                                       <Link 
                                         href={subItem.url} 
