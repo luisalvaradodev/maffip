@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { toast } from '@/hooks/use-toast';
 import { 
   Loader2, Save, Edit, Info, CreditCard, LifeBuoy, 
-  User, MessagesSquare, ChevronDown, MessageCircle, 
+  User, MessagesSquare, MessageCircle, 
   Clock, LayoutGrid 
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';

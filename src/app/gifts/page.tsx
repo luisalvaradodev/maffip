@@ -199,9 +199,9 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 p-6">
+    <div className="min-h-screen p-6">
       <div className="container mx-auto max-w-6xl">
-        <h1 className="text-4xl font-bold mb-8 text-center bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-pink-600">
+        <h1 className="text-4xl font-bold mb-8 text-center bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-cyan-600">
           Gift Management System
         </h1>
         
@@ -214,7 +214,7 @@ export default function Home() {
             <Card className="h-full">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-2xl">
-                  <Gift className="h-6 w-6 text-purple-500" />
+                  <Gift className="h-6 w-6 text-blue-500" />
                   Create Gift
                 </CardTitle>
                 <CardDescription className="text-base">
@@ -233,7 +233,7 @@ export default function Home() {
                       placeholder="Enter amount"
                       value={giftData.valor}
                       onChange={(e) => setGiftData(prev => ({ ...prev, valor: e.target.value }))}
-                      className="transition-all duration-200 focus:ring-2 focus:ring-purple-500"
+                      className="transition-all duration-200 focus:ring-2 focus:ring-blue-500"
                       required
                     />
                   </div>
@@ -247,29 +247,29 @@ export default function Home() {
                       placeholder="Enter phone number"
                       value={giftData.numero}
                       onChange={(e) => setGiftData(prev => ({ ...prev, numero: e.target.value }))}
-                      className="transition-all duration-200 focus:ring-2 focus:ring-purple-500"
+                      className="transition-all duration-200 focus:ring-2 focus:ring-blue-500"
                       required
                     />
                   </div>
                   <Button
                     type="submit"
                     disabled={loading}
-                    className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 transition-all duration-200"
+                    className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 transition-all duration-200"
                   >
                     Generate Gift Code
                   </Button>
                 </form>
 
                 {generatedCode && (
-                  <div className="mt-4 p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
-                    <p className="text-sm font-medium text-purple-700 dark:text-purple-300 mb-2">Generated Code:</p>
-                    <div className="flex items-center justify-between p-2 bg-white dark:bg-gray-800 rounded border border-purple-200 dark:border-purple-800">
+                  <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                    <p className="text-sm font-medium text-blue-700 dark:text-blue-300 mb-2">Generated Code:</p>
+                    <div className="flex items-center justify-between p-2 bg-white dark:bg-gray-800 rounded border border-blue-200 dark:border-blue-800">
                       <code className="text-lg font-mono">{generatedCode}</code>
                       <Button
                         size="sm"
                         variant="ghost"
                         onClick={() => copyToClipboard(generatedCode)}
-                        className="hover:bg-purple-50 dark:hover:bg-purple-900/50"
+                        className="hover:bg-blue-50 dark:hover:bg-blue-900/50"
                       >
                         {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
                       </Button>
@@ -289,7 +289,7 @@ export default function Home() {
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <CardTitle className="flex items-center gap-2 text-2xl">
-                    <MessageSquare className="h-6 w-6 text-pink-500" />
+                    <MessageSquare className="h-6 w-6 text-blue-500" />
                     Mass Messaging
                   </CardTitle>
                   <DropdownMenu>
@@ -396,7 +396,7 @@ export default function Home() {
                   <Button
                     onClick={sendMassMessage}
                     disabled={loading || selectedContacts.length === 0 || !message.trim() || !selectedInstance}
-                    className="w-full bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-700 hover:to-purple-700 transition-all duration-200"
+                    className="w-full bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 transition-all duration-200"
                   >
                     <Send className="h-4 w-4 mr-2" />
                     Send Message ({selectedContacts.length} selected)

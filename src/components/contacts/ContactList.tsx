@@ -41,7 +41,7 @@ const formatSaldo = (saldo: number | string | null | undefined): string => {
 };
 
 const getInitials = (name: string | null | undefined): string => {
-  if (!name) return ''; // Devuelve un valor por defecto si el nombre no es válido
+  if (!name) return '';
   return name
     .split(' ')
     .map(word => word[0])
@@ -49,7 +49,6 @@ const getInitials = (name: string | null | undefined): string => {
     .toUpperCase()
     .slice(0, 2);
 };
-
 
 export function ContactList({
   contacts,
@@ -93,11 +92,11 @@ export function ContactList({
   }
 
   return (
-    <div className="space-y-4">
-      <div className="rounded-md border">
+    <div className="space-y-4 mx-6 my-8"> {/* Añadido más espacio con mx-6 y my-8 */}
+      <div className="rounded-md border shadow-sm">
         <Table>
-          <TableHeader>
-            <TableRow className="bg-muted/50">
+          <TableHeader className="bg-muted/50">
+            <TableRow>
               <TableHead className="w-[50px]">
                 <Checkbox
                   checked={selectedContacts.length === contacts.length && contacts.length > 0}
@@ -121,7 +120,7 @@ export function ContactList({
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
                   transition={{ duration: 0.2 }}
-                  className="group hover:bg-muted/50"
+                  className="group hover:bg-muted/50 transition-colors"
                 >
                   <TableCell>
                     <Checkbox
@@ -172,7 +171,7 @@ export function ContactList({
       </div>
       
       {totalPages > 1 && (
-        <div className="flex justify-center mt-4">
+        <div className="flex justify-center mt-8"> {/* Añadido más espacio con mt-8 */}
           <Pagination
             currentPage={currentPage}
             totalPages={totalPages}

@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
+import { Loader2 } from 'lucide-react';
 
 export interface CreateContactDialogProps {
   open: boolean;
@@ -40,17 +41,17 @@ export function CreateContactDialog({
           saldoadd: '0',
           bloqueado: 0,
           comprando: 0,
-          mainid: 88 // Replace with actual mainid
+          mainid: 88 // Substitua pelo mainid real
         }),
       });
 
       if (!response.ok) {
-        throw new Error('Failed to create contact');
+        throw new Error('Falha ao criar contato');
       }
 
       toast({
-        title: "Success",
-        description: "Contact created successfully.",
+        title: "Sucesso",
+        description: "Contato criado com sucesso.",
       });
       onContactCreated();
       onOpenChange(false);
@@ -58,10 +59,10 @@ export function CreateContactDialog({
       setContactNumber('');
       setContactPhoto('');
     } catch (error) {
-      console.error('Error creating contact:', error);
+      console.error('Erro ao criar contato:', error);
       toast({
-        title: "Error",
-        description: "Failed to create contact. Please try again.",
+        title: "Erro",
+        description: "Falha ao criar contato. Por favor, tente novamente.",
         variant: "destructive",
       });
     } finally {
@@ -71,52 +72,77 @@ export function CreateContactDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="sm:max-w-[450px]">
         <DialogHeader>
-          <DialogTitle>Create New Contact</DialogTitle>
-          <DialogDescription>
-            Enter the details for the new contact.
+          <DialogTitle className="text-2xl font-bold text-primary">
+            Criar Novo Contato
+          </DialogTitle>
+          <DialogDescription className="text-muted-foreground">
+            Preencha os detalhes para criar um novo contato.
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit}>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="name" className="text-right">
-                Name
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="space-y-4">
+            {/* Campo Nome */}
+            <div className="space-y-2">
+              <Label htmlFor="name" className="text-sm font-medium text-foreground">
+                Nome
               </Label>
               <Input
                 id="name"
                 value={contactName}
                 onChange={(e) => setContactName(e.target.value)}
-                className="col-span-3"
+                placeholder="Digite o nome do contato"
+                required
+                className="focus:ring-2 focus:ring-primary"
               />
             </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="number" className="text-right">
-                Number
+
+            {/* Campo Número */}
+            <div className="space-y-2">
+              <Label htmlFor="number" className="text-sm font-medium text-foreground">
+                Número
               </Label>
               <Input
                 id="number"
                 value={contactNumber}
                 onChange={(e) => setContactNumber(e.target.value)}
-                className="col-span-3"
+                placeholder="Digite o número do contato"
+                required
+                className="focus:ring-2 focus:ring-primary"
               />
             </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="photo" className="text-right">
-                Photo URL
+
+            {/* Campo Foto (URL) */}
+            <div className="space-y-2">
+              <Label htmlFor="photo" className="text-sm font-medium text-foreground">
+                URL da Foto (Opcional)
               </Label>
               <Input
                 id="photo"
                 value={contactPhoto}
                 onChange={(e) => setContactPhoto(e.target.value)}
-                className="col-span-3"
+                placeholder="Cole a URL da foto do contato"
+                className="focus:ring-2 focus:ring-primary"
               />
             </div>
           </div>
+
+          {/* Rodapé do Diálogo */}
           <DialogFooter>
-            <Button type="submit" disabled={loading}>
-              {loading ? 'Creating...' : 'Create Contact'}
+            <Button
+              type="submit"
+              disabled={loading}
+              className="w-full sm:w-auto bg-primary hover:bg-primary/90 transition-colors"
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Criando...
+                </>
+              ) : (
+                'Criar Contato'
+              )}
             </Button>
           </DialogFooter>
         </form>

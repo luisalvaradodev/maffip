@@ -1,7 +1,7 @@
 'use client';
 
 import { useUser } from '@/app/context/UserContext';
-import { Home, User, Users, Settings, LayoutDashboard, Backpack, Group, MessagesSquare, Send, UserRoundSearch, QrCode, ChevronLeft, Gift } from 'lucide-react';
+import { Home, User, Users, Settings, LayoutDashboard, Backpack, Group, MessagesSquare, Send, UserRoundSearch, QrCode, ChevronLeft, Gift, ChevronDown } from 'lucide-react';
 import {
   Sidebar,
   SidebarContent,
@@ -20,13 +20,21 @@ export function AppSidebar() {
   const { user, loading } = useUser();
   const pathname = usePathname();
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isContactsOpen, setIsContactsOpen] = useState(false);
 
   if (loading || !user) return null;
 
   const items = [
     { title: 'Admin', url: `/admin`, icon: Home },
     { title: 'Profile', url: `/profile/${user.id}`, icon: User },
-    { title: 'Contatos', url: `/contacts`, icon: UserRoundSearch },
+    { 
+      title: 'Contatos', 
+      icon: UserRoundSearch,
+      subItems: [
+        { title: 'Meus Contatos', url: `/contacts` },
+        { title: 'Clientes', url: `/clients/${user.id}` },
+      ]
+    },
     { title: 'Textos', url: `/textos`, icon: Send },
     { title: 'Gifts', url: `/gifts`, icon: Gift },
     { title: 'Whatsapp', url: `/whatsapp`, icon: QrCode },
@@ -90,23 +98,92 @@ export function AppSidebar() {
             <SidebarMenu>
               {items.map((item) => {
                 const isActive = pathname === item.url;
+                const hasSubItems = item.subItems && item.subItems.length > 0;
+
                 return (
                   <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton asChild>
-                      <Link 
-                        href={item.url} 
-                        className={`
-                          group relative flex items-center gap-3 px-3 py-2.5 rounded-lg
-                          transition-all duration-200 ease-out
-                          ${isActive 
-                            ? 'bg-gradient-to-tr from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20' 
-                            : 'hover:bg-gray-50 dark:hover:bg-gray-800/50'}
-                        `}
-                      >
-                        <motion.div
-                          whileHover={{ scale: 1.1 }}
-                          whileTap={{ scale: 0.95 }}
-                          className="relative"
+                    {hasSubItems ? (
+                      <>
+                        <SidebarMenuButton 
+                          onClick={() => setIsContactsOpen(!isContactsOpen)}
+                          className={`
+                            group relative flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg
+                            transition-all duration-200 ease-out
+                            hover:bg-gray-50 dark:hover:bg-gray-800/50
+                          `}
+                        >
+                          <div className="flex items-center gap-3">
+                            <item.icon className={`
+                              h-[18px] w-[18px] transition-colors duration-200
+                              text-gray-400 group-hover:text-gray-600 dark:text-gray-500 dark:group-hover:text-gray-300
+                            `} />
+                            {!isCollapsed && (
+                              <span className={`
+                                text-sm transition-colors duration-200 whitespace-nowrap
+                                text-gray-600 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-gray-200
+                              `}>
+                                {item.title}
+                              </span>
+                            )}
+                          </div>
+                          {!isCollapsed && (
+                            <ChevronDown className={`
+                              h-4 w-4 text-gray-400 transition-transform duration-200
+                              ${isContactsOpen ? 'rotate-180' : ''}
+                            `} />
+                          )}
+                        </SidebarMenuButton>
+
+                        <AnimatePresence>
+                          {isContactsOpen && !isCollapsed && (
+                            <motion.div
+                              initial={{ opacity: 0, height: 0 }}
+                              animate={{ opacity: 1, height: 'auto' }}
+                              exit={{ opacity: 0, height: 0 }}
+                              className="pl-6"
+                            >
+                              <ul> {/* Envuelve los sub-ítems en un <ul> */}
+                                {item.subItems.map((subItem) => (
+                                  <li key={subItem.title}> {/* Usa <li> para los sub-ítems */}
+                                    <SidebarMenuButton asChild>
+                                      <Link 
+                                        href={subItem.url} 
+                                        className={`
+                                          group relative flex items-center gap-3 px-3 py-2.5 rounded-lg
+                                          transition-all duration-200 ease-out
+                                          ${pathname === subItem.url 
+                                            ? 'bg-gradient-to-tr from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20' 
+                                            : 'hover:bg-gray-50 dark:hover:bg-gray-800/50'}
+                                        `}
+                                      >
+                                        <span className={`
+                                          text-sm transition-colors duration-200 whitespace-nowrap
+                                          ${pathname === subItem.url 
+                                            ? 'text-blue-600 dark:text-blue-400 font-medium' 
+                                            : 'text-gray-600 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-gray-200'}
+                                        `}>
+                                          {subItem.title}
+                                        </span>
+                                      </Link>
+                                    </SidebarMenuButton>
+                                  </li>
+                                ))}
+                              </ul>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </>
+                    ) : (
+                      <SidebarMenuButton asChild>
+                        <Link 
+                          href={item.url} 
+                          className={`
+                            group relative flex items-center gap-3 px-3 py-2.5 rounded-lg
+                            transition-all duration-200 ease-out
+                            ${isActive 
+                              ? 'bg-gradient-to-tr from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20' 
+                              : 'hover:bg-gray-50 dark:hover:bg-gray-800/50'}
+                          `}
                         >
                           <item.icon className={`
                             h-[18px] w-[18px] transition-colors duration-200
@@ -114,41 +191,19 @@ export function AppSidebar() {
                               ? 'text-blue-600 dark:text-blue-400' 
                               : 'text-gray-400 group-hover:text-gray-600 dark:text-gray-500 dark:group-hover:text-gray-300'}
                           `} />
-                          {isActive && (
-                            <motion.div
-                              layoutId="iconGlow"
-                              className="absolute inset-0 blur-sm bg-blue-400/40 dark:bg-blue-500/40"
-                              transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
-                            />
+                          {!isCollapsed && (
+                            <span className={`
+                              text-sm transition-colors duration-200 whitespace-nowrap
+                              ${isActive 
+                                ? 'text-blue-600 dark:text-blue-400 font-medium' 
+                                : 'text-gray-600 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-gray-200'}
+                            `}>
+                              {item.title}
+                            </span>
                           )}
-                        </motion.div>
-                        
-                        {!isCollapsed && (
-                          <span className={`
-                            text-sm transition-colors duration-200 whitespace-nowrap
-                            ${isActive 
-                              ? 'text-blue-600 dark:text-blue-400 font-medium' 
-                              : 'text-gray-600 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-gray-200'}
-                          `}>
-                            {item.title}
-                          </span>
-                        )}
-
-                        {isActive && (
-                          <motion.div
-                            layoutId="activeIndicator"
-                            className="absolute left-0 top-[6px] bottom-[6px] w-0.5 bg-blue-600 
-                              dark:bg-blue-400 rounded-full"
-                            initial={false}
-                            transition={{ 
-                              type: "spring", 
-                              stiffness: 300, 
-                              damping: 30 
-                            }}
-                          />
-                        )}
-                      </Link>
-                    </SidebarMenuButton>
+                        </Link>
+                      </SidebarMenuButton>
+                    )}
                   </SidebarMenuItem>
                 );
               })}

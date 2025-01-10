@@ -3,7 +3,7 @@ import { executeQuery } from '@/features/data/actions/db';
 
 export async function GET(request: NextRequest) {
   const userId = request.nextUrl.searchParams.get('mainid');
-  
+
   if (!userId) {
     return NextResponse.json({ error: 'Missing mainid parameter' }, { status: 400 });
   }
@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   const id = request.nextUrl.searchParams.get('id');
-  
+
   if (!id) {
     return NextResponse.json({ error: 'Missing id parameter' }, { status: 400 });
   }
@@ -60,3 +60,36 @@ export async function DELETE(request: NextRequest) {
   }
 }
 
+export async function PUT(request: NextRequest) {
+  const id = request.nextUrl.searchParams.get('id');
+
+  if (!id) {
+    return NextResponse.json({ error: 'Missing id parameter' }, { status: 400 });
+  }
+
+  try {
+    // Obtener el estado actual de `bloqueado`
+    const [contact] = await executeQuery(
+      'SELECT bloqueado FROM contatos WHERE id = ?;',
+      [id]
+    );
+
+    if (!contact) {
+      return NextResponse.json({ error: 'Contact not found' }, { status: 404 });
+    }
+
+    // Alternar el estado de `bloqueado`
+    const newBloqueado = contact.bloqueado === 1 ? 0 : 1;
+
+    // Actualizar el estado en la base de datos
+    await executeQuery('UPDATE contatos SET bloqueado = ? WHERE id = ?;', [
+      newBloqueado,
+      id,
+    ]);
+
+    return NextResponse.json({ success: true, bloqueado: newBloqueado });
+  } catch (error) {
+    console.error('Error toggling block status:', error);
+    return NextResponse.json({ error: 'Failed to toggle block status' }, { status: 500 });
+  }
+}

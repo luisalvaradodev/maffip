@@ -1,113 +1,127 @@
-import { useState } from 'react'
-import { Button } from "@/components/ui/button"
-import { 
+import { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { useToast } from "@/hooks/use-toast"
-import { MoreHorizontal, Send, Gift, CheckSquare, Square } from 'lucide-react'
-import { ConfirmDialog } from "@/components/ui/confirm-dialog"
+} from '@/components/ui/dropdown-menu';
+import { useToast } from '@/hooks/use-toast';
+import { MoreHorizontal, Send, Gift, CheckSquare, Square } from 'lucide-react';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 
 interface Contact {
-  id: number
-  numero: string
-  nome: string
-  foto: string
-  mainid: number
-  saldo: number | null
-  saldoadd: string
-  bloqueado: number
-  comprando: number
+  id: number;
+  numero: string;
+  nome: string;
+  foto: string;
+  mainid: number;
+  saldo: number | null;
+  saldoadd: string;
+  bloqueado: number;
+  comprando: number;
 }
 
 interface ContactActionsProps {
-  contact?: Contact
-  contactCount?: number
-  onRefresh: () => void
-  selectedContacts: number[]
-  setSelectedContacts: (ids: number[]) => void
+  contact?: Contact;
+  contactCount?: number;
+  onRefresh: () => void;
+  selectedContacts: number[];
+  setSelectedContacts: (ids: number[]) => void;
 }
 
-export function ContactActions({ contact, contactCount, onRefresh, selectedContacts, setSelectedContacts }: ContactActionsProps) {
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
-  const { toast } = useToast()
+export function ContactActions({
+  contact,
+  contactCount,
+  onRefresh,
+  selectedContacts,
+  setSelectedContacts,
+}: ContactActionsProps) {
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const { toast } = useToast();
 
   const handleToggleBlock = async () => {
-    if (!contact) return
+    if (!contact) return;
 
     try {
-      const response = await fetch(`/api/contacts/${contact.id}/toggle-block`, {
+      const response = await fetch(`/api/contacts?id=${contact.id}`, {
         method: 'PUT',
-      })
+      });
 
       if (!response.ok) {
-        throw new Error('Failed to toggle block status')
+        throw new Error('Failed to toggle block status');
       }
 
-      toast({
-        title: "Contact Updated",
-        description: `Contact ${contact.nome} has been ${contact.bloqueado === 1 ? 'unblocked' : 'blocked'}.`,
-      })
+      const data = await response.json();
 
-      onRefresh()
-    } catch (error) {
-      console.error('Error toggling block status:', error)
       toast({
-        title: "Error",
-        description: "Failed to update contact status. Please try again.",
-        variant: "destructive",
-      })
+        title: 'Contact Updated',
+        description: `Contact ${contact.nome} has been ${
+          data.bloqueado === 1 ? 'blocked' : 'unblocked'
+        }.`,
+      });
+
+      onRefresh();
+    } catch (error) {
+      console.error('Error toggling block status:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to update contact status. Please try again.',
+        variant: 'destructive',
+      });
     }
-  }
+  };
 
   const handleDeleteContact = async () => {
-    if (!contact) return
+    if (!contact) return;
 
     try {
-      const response = await fetch(`/api/contacts/${contact.id}`, { method: 'DELETE' })
+      const response = await fetch(`/api/contacts?id=${contact.id}`, {
+        method: 'DELETE',
+      });
       if (!response.ok) {
-        throw new Error('Failed to delete contact')
+        throw new Error('Failed to delete contact');
       }
       toast({
-        title: "Contact Deleted",
+        title: 'Contact Deleted',
         description: `Contact ${contact.nome} has been deleted.`,
-      })
-      onRefresh()
+      });
+      onRefresh();
     } catch (error) {
-      console.error('Error deleting contact:', error)
+      console.error('Error deleting contact:', error);
       toast({
-        title: "Error",
-        description: "Failed to delete contact. Please try again.",
-        variant: "destructive",
-      })
+        title: 'Error',
+        description: 'Failed to delete contact. Please try again.',
+        variant: 'destructive',
+      });
     }
-  }
+  };
 
   const handleMassMessage = () => {
     toast({
-      title: "Mass Message",
+      title: 'Mass Message',
       description: `Preparing to send message to ${selectedContacts.length} contacts`,
-    })
-  }
+    });
+  };
 
   const handleCreateGift = () => {
     toast({
-      title: "Create Gift",
+      title: 'Create Gift',
       description: `Preparing to create gift for ${selectedContacts.length} contacts`,
-    })
-  }
+    });
+  };
 
   const handleSelectAll = () => {
     if (selectedContacts.length === contactCount) {
-      setSelectedContacts([])
+      setSelectedContacts([]);
     } else {
-      setSelectedContacts(Array.from({ length: contactCount || 0 }, (_, i) => i + 1))
+      setSelectedContacts(
+        Array.from({ length: contactCount || 0 }, (_, i) => i + 1)
+      );
     }
-  }
+  };
 
   if (contact) {
     return (
@@ -122,10 +136,13 @@ export function ContactActions({ contact, contactCount, onRefresh, selectedConta
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>Actions</DropdownMenuLabel>
             <DropdownMenuItem onClick={handleToggleBlock}>
-              {contact.bloqueado === 1 ? "Unblock" : "Block"}
+              {contact.bloqueado === 1 ? 'Unblock' : 'Block'}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => setIsDeleteDialogOpen(true)} className="text-red-600">
+            <DropdownMenuItem
+              onClick={() => setIsDeleteDialogOpen(true)}
+              className="text-red-600"
+            >
               Delete Contact
             </DropdownMenuItem>
           </DropdownMenuContent>
@@ -140,7 +157,7 @@ export function ContactActions({ contact, contactCount, onRefresh, selectedConta
           cancelText="Cancel"
         />
       </>
-    )
+    );
   }
 
   return (
@@ -167,6 +184,5 @@ export function ContactActions({ contact, contactCount, onRefresh, selectedConta
         )}
       </Button>
     </div>
-  )
+  );
 }
-
