@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
@@ -18,12 +18,13 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import type { Contact } from '@/features/data/types';
+import { useDebounce } from 'use-debounce'; // npm install use-debounce
 
 export default function Home() {
   const [loading, setLoading] = useState(false);
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [selectedContacts, setSelectedContacts] = useState<number[]>([]);
-  const [generatedCode, setGeneratedCode] = useState('');
+  const [generatedCodes, setGeneratedCodes] = useState<{ [key: number]: string }>({});
   const [message, setMessage] = useState('');
   const [giftData, setGiftData] = useState({
     valor: '',
@@ -31,20 +32,30 @@ export default function Home() {
   });
   const [copied, setCopied] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm] = useDebounce(searchTerm, 300); // Debounce de 300ms
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'blocked'>('all');
   const [selectedInstance, setSelectedInstance] = useState('');
   const [instances, setInstances] = useState<any[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [contactsPerPage] = useState(10); // Número de contactos por página
+  const [mainid, setMainid] = useState(88); // mainid por defecto
 
   useEffect(() => {
     fetchContacts();
     fetchInstances();
-  }, []);
+  }, [mainid]);
 
   useEffect(() => {
-    if (generatedCode) {
-      setMessage(`Seu código de presente é: ${generatedCode}\nValor: R$${giftData.valor}`);
+    if (selectedContacts.length > 0) {
+      const selectedNumbers = selectedContacts
+        .map(id => contacts.find(contact => contact.id === id)?.numero)
+        .filter(Boolean)
+        .join(', ');
+      setGiftData(prev => ({ ...prev, numero: selectedNumbers }));
+    } else {
+      setGiftData(prev => ({ ...prev, numero: '' }));
     }
-  }, [generatedCode, giftData.valor]);
+  }, [selectedContacts, contacts]);
 
   const fetchInstances = async () => {
     try {
@@ -54,73 +65,106 @@ export default function Home() {
       const data = await response.json();
       setInstances(data);
     } catch (error) {
-      toast.error('Failed to fetch WhatsApp instances');
+      toast.error('Falha ao buscar instâncias do WhatsApp');
     }
   };
 
   const fetchContacts = async () => {
     try {
-      const response = await fetch('/api/contacts?mainid=88');
+      const response = await fetch(`/api/contacts?mainid=${mainid}`);
       const data = await response.json();
       setContacts(data || []);
     } catch (error) {
-      toast.error('Failed to fetch contacts');
+      toast.error('Falha ao buscar contatos');
     }
   };
 
-  const filteredContacts = contacts.filter(contact => {
-    const matchesSearch = (
-      (contact.nome?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
-      (contact.numero || '').includes(searchTerm)
-    );
-    
-    const matchesStatus = statusFilter === 'all' 
-      ? true 
-      : statusFilter === 'blocked' 
-        ? contact.bloqueado === 1
-        : contact.bloqueado === 0;
+  const filteredContacts = useMemo(() => {
+    return contacts.filter(contact => {
+      const matchesSearch = (
+        (contact.nome?.toLowerCase() || '').includes(debouncedSearchTerm.toLowerCase()) ||
+        (contact.numero || '').includes(debouncedSearchTerm)
+      );
+      
+      const matchesStatus = statusFilter === 'all' 
+        ? true 
+        : statusFilter === 'blocked' 
+          ? contact.bloqueado === 1
+          : contact.bloqueado === 0;
 
-    return matchesSearch && matchesStatus;
-  });
+      return matchesSearch && matchesStatus;
+    });
+  }, [contacts, debouncedSearchTerm, statusFilter]);
 
-  const generateCode = () => {
+  // Paginación
+  const indexOfLastContact = currentPage * contactsPerPage;
+  const indexOfFirstContact = indexOfLastContact - contactsPerPage;
+  const currentContacts = filteredContacts.slice(indexOfFirstContact, indexOfLastContact);
+
+  const paginate = (pageNumber: number) => setCurrentPage(pageNumber);
+
+  const generateCode = useCallback(() => {
     return Math.random().toString(36).substring(2, 10).toUpperCase();
-  };
+  }, []);
 
   const copyToClipboard = async (text: string) => {
     try {
       await navigator.clipboard.writeText(text);
       setCopied(true);
-      toast.success('Code copied to clipboard!');
+      toast.success('Código copiado para a área de transferência!');
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {
-      toast.error('Failed to copy code');
+      toast.error('Falha ao copiar código');
     }
   };
 
   const createGift = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (selectedContacts.length === 0) {
+      toast.error('Selecione pelo menos um contato');
+      return;
+    }
+
     setLoading(true);
-    const code = generateCode();
+    const newGeneratedCodes: { [key: number]: string } = {};
 
     try {
-      const response = await fetch('/api/gifts', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          mainid: 88,
-          valor: parseFloat(giftData.valor),
-          numero: giftData.numero,
-          codigo: code,
-        }),
+      await Promise.all(
+        selectedContacts.map(async (contactId) => {
+          const code = generateCode();
+          newGeneratedCodes[contactId] = code;
+
+          const response = await fetch('/api/gifts', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              mainid,
+              valor: parseFloat(giftData.valor),
+              numero: contacts.find(contact => contact.id === contactId)?.numero,
+              codigo: code,
+            }),
+          });
+
+          if (!response.ok) throw new Error('Falha ao criar presente');
+        })
+      );
+
+      setGeneratedCodes(newGeneratedCodes);
+      toast.success('Presentes criados com sucesso!');
+
+      // Generar mensaje prefabricado para cada contacto
+      const selectedContactDetails = selectedContacts.map(id => {
+        const contact = contacts.find(c => c.id === id);
+        return { nome: contact?.nome || contact?.numero, codigo: newGeneratedCodes[id] };
       });
 
-      if (!response.ok) throw new Error('Failed to create gift');
-      
-      setGeneratedCode(code);
-      toast.success('Gift created successfully!');
+      const prefabricatedMessage = selectedContactDetails
+        .map(detail => `Código de presente para ${detail.nome}: ${detail.codigo}\nValor: R$${giftData.valor}`)
+        .join('\n\n');
+
+      setMessage(prefabricatedMessage);
     } catch (error) {
-      toast.error('Failed to create gift');
+      toast.error('Falha ao criar presentes');
     } finally {
       setLoading(false);
     }
@@ -133,7 +177,7 @@ export default function Home() {
 
   const sendMassMessage = async () => {
     if (!selectedInstance || selectedContacts.length === 0 || !message.trim()) {
-      toast.error('Please select an instance, contacts, and enter a message');
+      toast.error('Por favor, selecione uma instância, contatos e insira uma mensagem');
       return;
     }
 
@@ -148,6 +192,8 @@ export default function Home() {
           if (!contact) return;
 
           const formattedNumber = formatPhoneNumber(contact.numero);
+          const code = generatedCodes[contactId];
+          const personalizedMessage = `Código de presente para ${contact.nome || contact.numero}: ${code}\nValor: R$${giftData.valor}`;
 
           const options = {
             method: 'POST',
@@ -161,7 +207,7 @@ export default function Home() {
                 presence: "composing"
               },
               number: formattedNumber,
-              textMessage: { text: message }
+              textMessage: { text: personalizedMessage }
             })
           };
 
@@ -171,28 +217,29 @@ export default function Home() {
               options
             );
             
-            if (!response.ok) throw new Error(`Failed to send message to ${contact.numero}`);
+            if (!response.ok) throw new Error(`Falha ao enviar mensagem para ${contact.numero}`);
             
             successCount++;
-            toast.success(`Message sent to ${contact.nome || contact.numero}`);
+            toast.success(`Mensagem enviada para ${contact.nome || contact.numero}`);
           } catch (error) {
             failureCount++;
-            toast.error(`Failed to send message to ${contact.nome || contact.numero}`);
+            toast.error(`Falha ao enviar mensagem para ${contact.nome || contact.numero}`);
           }
         })
       );
 
       toast({
-        title: "Message Status",
-        description: `${successCount} sent successfully, ${failureCount} failed`,
+        title: "Status da Mensagem",
+        description: `${successCount} enviadas com sucesso, ${failureCount} falhas`,
       });
 
       if (successCount > 0) {
         setSelectedContacts([]);
         setMessage('');
+        setGeneratedCodes({});
       }
     } catch (error) {
-      toast.error('Failed to send messages');
+      toast.error('Falha ao enviar mensagens');
     } finally {
       setLoading(false);
     }
@@ -202,7 +249,7 @@ export default function Home() {
     <div className="min-h-screen p-6">
       <div className="container mx-auto max-w-6xl">
         <h1 className="text-4xl font-bold mb-8 text-center bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-cyan-600">
-          Gift Management System
+          Sistema de Gerenciamento de Presentes
         </h1>
         
         <div className="grid gap-6 md:grid-cols-2">
@@ -215,10 +262,10 @@ export default function Home() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-2xl">
                   <Gift className="h-6 w-6 text-blue-500" />
-                  Create Gift
+                  Criar Presente
                 </CardTitle>
                 <CardDescription className="text-base">
-                  Generate a new gift code for a customer
+                  Gere novos códigos de presente para os clientes selecionados
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -226,11 +273,11 @@ export default function Home() {
                   <div className="space-y-2">
                     <label className="text-sm font-medium flex items-center gap-2">
                       <DollarSign className="h-4 w-4" />
-                      Amount
+                      Valor
                     </label>
                     <Input
                       type="number"
-                      placeholder="Enter amount"
+                      placeholder="Insira o valor"
                       value={giftData.valor}
                       onChange={(e) => setGiftData(prev => ({ ...prev, valor: e.target.value }))}
                       className="transition-all duration-200 focus:ring-2 focus:ring-blue-500"
@@ -240,39 +287,42 @@ export default function Home() {
                   <div className="space-y-2">
                     <label className="text-sm font-medium flex items-center gap-2">
                       <Phone className="h-4 w-4" />
-                      Phone Number
+                      Números Selecionados
                     </label>
                     <Input
-                      type="tel"
-                      placeholder="Enter phone number"
+                      type="text"
+                      placeholder="Números selecionados aparecerão aqui"
                       value={giftData.numero}
-                      onChange={(e) => setGiftData(prev => ({ ...prev, numero: e.target.value }))}
-                      className="transition-all duration-200 focus:ring-2 focus:ring-blue-500"
-                      required
+                      readOnly
+                      className="transition-all duration-200 focus:ring-2 focus:ring-blue-500 bg-gray-100"
                     />
                   </div>
                   <Button
                     type="submit"
-                    disabled={loading}
+                    disabled={loading || selectedContacts.length === 0}
                     className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 transition-all duration-200"
                   >
-                    Generate Gift Code
+                    Gerar Códigos de Presente
                   </Button>
                 </form>
 
-                {generatedCode && (
+                {Object.keys(generatedCodes).length > 0 && (
                   <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                    <p className="text-sm font-medium text-blue-700 dark:text-blue-300 mb-2">Generated Code:</p>
-                    <div className="flex items-center justify-between p-2 bg-white dark:bg-gray-800 rounded border border-blue-200 dark:border-blue-800">
-                      <code className="text-lg font-mono">{generatedCode}</code>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => copyToClipboard(generatedCode)}
-                        className="hover:bg-blue-50 dark:hover:bg-blue-900/50"
-                      >
-                        {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                      </Button>
+                    <p className="text-sm font-medium text-blue-700 dark:text-blue-300 mb-2">Códigos Gerados:</p>
+                    <div className="space-y-2">
+                      {selectedContacts.map((contactId) => (
+                        <div key={contactId} className="flex items-center justify-between p-2 bg-white dark:bg-gray-800 rounded border border-blue-200 dark:border-blue-800">
+                          <code className="text-lg font-mono">{generatedCodes[contactId]}</code>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => copyToClipboard(generatedCodes[contactId])}
+                            className="hover:bg-blue-50 dark:hover:bg-blue-900/50"
+                          >
+                            {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                          </Button>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 )}
@@ -290,7 +340,7 @@ export default function Home() {
                 <div className="flex items-center justify-between">
                   <CardTitle className="flex items-center gap-2 text-2xl">
                     <MessageSquare className="h-6 w-6 text-blue-500" />
-                    Mass Messaging
+                    Mensagens em Massa
                   </CardTitle>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -300,19 +350,19 @@ export default function Home() {
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                       <DropdownMenuItem onClick={() => setStatusFilter('all')}>
-                        All Contacts
+                        Todos os Contatos
                       </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => setStatusFilter('active')}>
-                        Active Only
+                        Apenas Ativos
                       </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => setStatusFilter('blocked')}>
-                        Blocked Only
+                        Apenas Bloqueados
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </div>
                 <CardDescription className="text-base">
-                  Send messages to selected contacts
+                  Envie mensagens para os contatos selecionados
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -320,7 +370,7 @@ export default function Home() {
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 transform text-gray-400" />
                     <Input
-                      placeholder="Search contacts..."
+                      placeholder="Pesquisar contatos..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                       className="pl-10"
@@ -329,7 +379,7 @@ export default function Home() {
 
                   <Select onValueChange={setSelectedInstance}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Select WhatsApp Instance" />
+                      <SelectValue placeholder="Selecione uma Instância do WhatsApp" />
                     </SelectTrigger>
                     <SelectContent>
                       {instances.map((instance: any) => (
@@ -343,10 +393,10 @@ export default function Home() {
                     </SelectContent>
                   </Select>
 
-                  <ScrollArea className="h-[200px] border rounded-lg p-4">
-                    {filteredContacts.length > 0 ? (
+                  <div className="h-[200px] overflow-y-auto border rounded-lg p-4">
+                    {currentContacts.length > 0 ? (
                       <ul className="space-y-2">
-                        {filteredContacts.map((contact, index) => (
+                        {currentContacts.map((contact, index) => (
                           <motion.li
                             key={contact.id}
                             initial={{ opacity: 0, x: -20 }}
@@ -360,6 +410,10 @@ export default function Home() {
                             <Checkbox
                               checked={selectedContacts.includes(contact.id)}
                               onCheckedChange={(checked) => {
+                                if (checked && selectedContacts.length >= 5) {
+                                  toast.error('Você só pode selecionar até 5 contatos');
+                                  return;
+                                }
                                 setSelectedContacts(
                                   checked
                                     ? [...selectedContacts, contact.id]
@@ -369,10 +423,10 @@ export default function Home() {
                             />
                             <div className="flex-1">
                               <div className="flex items-center gap-2">
-                                <span className="font-medium">{contact.nome || 'No Name'}</span>
+                                <span className="font-medium">{contact.nome || 'Sem Nome'}</span>
                                 {contact.bloqueado === 1 && (
                                   <span className="px-2 py-0.5 text-xs rounded-full bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-200">
-                                    Blocked
+                                    Bloqueado
                                   </span>
                                 )}
                               </div>
@@ -382,14 +436,28 @@ export default function Home() {
                         ))}
                       </ul>
                     ) : (
-                      <p className="text-gray-500 text-center">No contacts found</p>
+                      <p className="text-gray-500 text-center">Nenhum contato encontrado</p>
                     )}
-                  </ScrollArea>
+                  </div>
+
+                  {/* Paginación */}
+                  <div className="flex justify-center gap-2 overflow-x-auto py-2">
+                    {Array.from({ length: Math.ceil(filteredContacts.length / contactsPerPage) }, (_, i) => (
+                      <Button
+                        key={i + 1}
+                        onClick={() => paginate(i + 1)}
+                        variant={currentPage === i + 1 ? 'default' : 'outline'}
+                        className="min-w-[40px]"
+                      >
+                        {i + 1}
+                      </Button>
+                    ))}
+                  </div>
 
                   <Textarea
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
-                    placeholder="Enter your message..."
+                    placeholder="Insira sua mensagem... Use {codigo} para o código e {nome} para o nome do contato."
                     className="min-h-[100px] resize-none"
                   />
 
@@ -399,12 +467,12 @@ export default function Home() {
                     className="w-full bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 transition-all duration-200"
                   >
                     <Send className="h-4 w-4 mr-2" />
-                    Send Message ({selectedContacts.length} selected)
+                    Enviar Mensagem ({selectedContacts.length} selecionados)
                   </Button>
                 </div>
               </CardContent>
               <CardFooter className="text-sm text-gray-500">
-                Selected contacts will receive the message via WhatsApp
+                Os contatos selecionados receberão a mensagem via WhatsApp
               </CardFooter>
             </Card>
           </motion.div>
