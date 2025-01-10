@@ -31,8 +31,9 @@ import {
   CreditCard
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { CardShineEffect } from '@/components/ui/card-shine-effect';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 
-// Esquema de validación
 const formSchema = z.object({
   nome: z.string().min(2, 'Nome deve ter pelo menos 2 caracteres'),
   numero: z.string().min(1, 'Número é obrigatório'),
@@ -47,7 +48,7 @@ interface ClientDialogProps {
   onOpenChange: (open: boolean) => void;
   client: { id?: number; nome?: string; numero?: string; valor?: number; validade?: string; produto?: string; mainid?: number } | null;
   onSuccess: () => void;
-  mainid: number; // mainid del usuario actual
+  mainid: number;
 }
 
 const inputVariants = {
@@ -84,7 +85,6 @@ export default function ClientDialog({
     },
   });
 
-  // Cargar los datos del cliente cuando se abre el diálogo
   useEffect(() => {
     if (client) {
       form.reset({
@@ -96,7 +96,6 @@ export default function ClientDialog({
         mainid: client.mainid || mainid,
       });
     } else {
-      // Plantilla predefinida para nuevo cliente
       form.reset({
         nome: '',
         numero: '',
@@ -113,20 +112,19 @@ export default function ClientDialog({
     try {
       const url = client ? `/api/clients/${client.id}` : '/api/clients';
       const method = client ? 'PUT' : 'POST';
-  
-      // Verificar que el campo "produto" tenga un valor
+
       if (!values.produto) {
         throw new Error('O campo "Produto" é obrigatório.');
       }
-  
+
       const response = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(values),
       });
-  
+
       if (!response.ok) throw new Error('Failed to save client');
-  
+
       toast({
         title: 'Success',
         description: `Cliente ${client ? 'atualizado' : 'criado'} com sucesso`,
@@ -146,9 +144,11 @@ export default function ClientDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px] overflow-hidden">
-        <DialogHeader>
-          <DialogTitle className="text-2xl font-bold text-center mb-4">
+      <DialogContent className="sm:max-w-[500px] overflow-hidden bg-gradient-to-b from-background to-background/80 backdrop-blur-xl border-primary/20">
+        <CardShineEffect />
+        <DialogHeader className="relative">
+          <div className="absolute inset-0 -z-10 bg-gradient-to-b from-primary/5 to-transparent" />
+          <DialogTitle className="text-3xl font-bold text-center mb-6 bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/60">
             {client ? 'Editar Cliente' : 'Novo Cliente'}
           </DialogTitle>
           {client && (
@@ -168,90 +168,88 @@ export default function ClientDialog({
               animate="visible"
               variants={{
                 visible: {
-                  transition: {
-                    staggerChildren: 0.1,
-                  },
-                },
+                  transition: { staggerChildren: 0.1 }
+                }
               }}
               className="grid grid-cols-1 gap-6"
             >
-              {/* Campo Nome */}
+              {/* Nome Field */}
               <motion.div variants={inputVariants} custom={0}>
                 <FormField
                   control={form.control}
                   name="nome"
                   render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="flex items-center gap-2">
+                    <FormItem className="group">
+                      <FormLabel className="flex items-center gap-2 text-sm font-medium text-muted-foreground group-hover:text-primary transition-colors duration-200">
                         <User className="w-4 h-4" />
                         Nome
                       </FormLabel>
                       <FormControl>
                         <Input
                           {...field}
-                          className="transition-all duration-200 focus:ring-2 focus:ring-primary"
+                          className="transition-all duration-200 border-muted/40 focus:border-primary hover:border-primary/60 bg-background/50 backdrop-blur-sm"
                         />
                       </FormControl>
-                      <FormMessage />
+                      <FormMessage className="text-xs" />
                     </FormItem>
                   )}
                 />
               </motion.div>
 
-              {/* Campo Número */}
+              {/* Número Field */}
               <motion.div variants={inputVariants} custom={1}>
                 <FormField
                   control={form.control}
                   name="numero"
                   render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="flex items-center gap-2">
+                    <FormItem className="group">
+                      <FormLabel className="flex items-center gap-2 text-sm font-medium text-muted-foreground group-hover:text-primary transition-colors duration-200">
                         <Phone className="w-4 h-4" />
                         Número
                       </FormLabel>
                       <FormControl>
                         <Input
                           {...field}
-                          className="transition-all duration-200 focus:ring-2 focus:ring-primary"
+                          className="transition-all duration-200 border-muted/40 focus:border-primary hover:border-primary/60 bg-background/50 backdrop-blur-sm"
                         />
                       </FormControl>
-                      <FormMessage />
+                      <FormMessage className="text-xs" />
                     </FormItem>
                   )}
                 />
               </motion.div>
 
-              {/* Campo Produto (Textarea) */}
+              {/* Produto Field */}
               <motion.div variants={inputVariants} custom={2}>
                 <FormField
                   control={form.control}
                   name="produto"
                   render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="flex items-center gap-2">
+                    <FormItem className="group">
+                      <FormLabel className="flex items-center gap-2 text-sm font-medium text-muted-foreground group-hover:text-primary transition-colors duration-200">
                         <Package className="w-4 h-4" />
                         Produto
                       </FormLabel>
                       <FormControl>
                         <Textarea
                           {...field}
-                          className="resize-none min-h-[200px] transition-all duration-200 focus:ring-2 focus:ring-primary"
+                          className="resize-none min-h-[200px] transition-all duration-200 border-muted/40 focus:border-primary hover:border-primary/60 bg-background/50 backdrop-blur-sm"
                         />
                       </FormControl>
-                      <FormMessage />
+                      <FormMessage className="text-xs" />
                     </FormItem>
                   )}
                 />
               </motion.div>
 
-              {/* Campo Valor */}
+              {/* Valor Field */}
               <motion.div variants={inputVariants} custom={3}>
                 <FormField
                   control={form.control}
                   name="valor"
                   render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="flex items-center gap-2">
+                    <FormItem className="group">
+                      <FormLabel className="flex items-center gap-2 text-sm font-medium text-muted-foreground group-hover:text-primary transition-colors duration-200">
                         <CreditCard className="w-4 h-4" />
                         Valor
                       </FormLabel>
@@ -261,23 +259,23 @@ export default function ClientDialog({
                           step="0.01"
                           {...field}
                           onChange={(e) => field.onChange(parseFloat(e.target.value))}
-                          className="transition-all duration-200 focus:ring-2 focus:ring-primary"
+                          className="transition-all duration-200 border-muted/40 focus:border-primary hover:border-primary/60 bg-background/50 backdrop-blur-sm"
                         />
                       </FormControl>
-                      <FormMessage />
+                      <FormMessage className="text-xs" />
                     </FormItem>
                   )}
                 />
               </motion.div>
 
-              {/* Campo Validade */}
+              {/* Validade Field */}
               <motion.div variants={inputVariants} custom={4}>
                 <FormField
                   control={form.control}
                   name="validade"
                   render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="flex items-center gap-2">
+                    <FormItem className="group">
+                      <FormLabel className="flex items-center gap-2 text-sm font-medium text-muted-foreground group-hover:text-primary transition-colors duration-200">
                         <Calendar className="w-4 h-4" />
                         Validade
                       </FormLabel>
@@ -285,10 +283,10 @@ export default function ClientDialog({
                         <Input
                           type="date"
                           {...field}
-                          className="transition-all duration-200 focus:ring-2 focus:ring-primary"
+                          className="transition-all duration-200 border-muted/40 focus:border-primary hover:border-primary/60 bg-background/50 backdrop-blur-sm"
                         />
                       </FormControl>
-                      <FormMessage />
+                      <FormMessage className="text-xs" />
                     </FormItem>
                   )}
                 />
@@ -296,7 +294,7 @@ export default function ClientDialog({
             </motion.div>
 
             <motion.div
-              className="flex justify-end space-x-4 pt-4"
+              className="flex justify-end space-x-4 pt-6"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.4 }}
@@ -305,23 +303,22 @@ export default function ClientDialog({
                 type="button"
                 variant="outline"
                 onClick={() => onOpenChange(false)}
-                className="hover:bg-secondary transition-colors duration-200"
+                className="hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30 transition-all duration-200"
               >
                 Cancelar
               </Button>
               <Button
                 type="submit"
                 disabled={isLoading}
-                className="bg-primary hover:bg-primary/90 transition-colors duration-200"
+                className="bg-primary hover:bg-primary/90 transition-all duration-200 relative overflow-hidden group"
               >
                 {isLoading ? (
-                  <motion.div
-                    animate={{ rotate: 360 }}
-                    transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
-                    className="w-4 h-4 border-2 border-white border-t-transparent rounded-full"
-                  />
+                  <LoadingSpinner className="text-primary-foreground" />
                 ) : (
-                  'Salvar'
+                  <>
+                    <span className="relative z-10">Salvar</span>
+                    <span className="absolute inset-0 bg-gradient-to-r from-primary-foreground/0 via-primary-foreground/10 to-primary-foreground/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
+                  </>
                 )}
               </Button>
             </motion.div>

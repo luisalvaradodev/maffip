@@ -29,6 +29,8 @@ import { Pagination } from '@/components/shared/pagination';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { CardShineEffect } from '@/components/ui/card-shine-effect';
+import { ReportPreviewDialog } from './ReportPreviewDialog';  // Importa el componente
 
 const ITEMS_PER_PAGE = 10;
 
@@ -37,6 +39,8 @@ export default function ClientList({ mainid }: { mainid: number }) {
   const [filteredClients, setFilteredClients] = useState<Contact[]>([]);
   const [selectedClient, setSelectedClient] = useState<Contact | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [selectedClientForReport, setSelectedClientForReport] = useState<Contact | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const { toast } = useToast();
@@ -84,7 +88,6 @@ export default function ClientList({ mainid }: { mainid: number }) {
       } else {
         throw new Error('La respuesta de la API no es un array');
       }
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {
       toast({
         title: 'Error',
@@ -104,7 +107,6 @@ export default function ClientList({ mainid }: { mainid: number }) {
         description: 'Client deleted successfully',
       });
       fetchClients();
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {
       toast({
         title: 'Error',
@@ -124,25 +126,33 @@ export default function ClientList({ mainid }: { mainid: number }) {
     setIsDialogOpen(true);
   };
 
-  const handleDownloadReport = async (client: Contact) => {
-    try {
-      const response = await fetch(`/api/clients/${client.id}/report`);
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `client-report-${client.nome}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to download report',
-        variant: 'destructive',
-      });
+  const handlePreviewReport = (client: Contact) => {
+    setSelectedClientForReport(client);
+    setIsPreviewOpen(true);
+  };
+
+  const handleDownloadReport = async () => {
+    if (selectedClientForReport) {
+      try {
+        const response = await fetch(`/api/clients/${selectedClientForReport.id}/report`);
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `client-report-${selectedClientForReport.nome}.txt`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+      } catch (error) {
+        toast({
+          title: 'Error',
+          description: 'Failed to download report',
+          variant: 'destructive',
+        });
+      } finally {
+        setIsPreviewOpen(false);
+      }
     }
   };
 
@@ -157,42 +167,55 @@ export default function ClientList({ mainid }: { mainid: number }) {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
-      className="p-6 max-w-7xl mx-auto space-y-8"
+      transition={{ duration: 0.4 }}
+      className="p-8 max-w-7xl mx-auto space-y-8"
     >
-      <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
-        <h2 className="text-3xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+      <div className="flex flex-col sm:flex-row justify-between items-center gap-6">
+        <motion.h2 
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          className="text-4xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent"
+        >
           Gerenciamento de Clientes
-        </h2>
-        <div className="flex gap-4 w-full sm:w-auto">
-          <div className="relative flex-1 sm:flex-initial">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+        </motion.h2>
+        
+        <motion.div 
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          className="flex gap-4 w-full sm:w-auto"
+        >
+          <div className="relative flex-1 sm:flex-initial group">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground group-hover:text-primary transition-colors duration-200 w-4 h-4" />
             <Input
               placeholder="Pesquisar clientes..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 w-full min-w-[300px]"
+              className="pl-10 w-full min-w-[300px] border-muted/40 focus:border-primary hover:border-primary/60 transition-all duration-200"
             />
           </div>
           <Button
             onClick={handleCreate}
-            className="bg-primary hover:bg-primary/90 transition-all duration-200 transform hover:scale-105"
+            className="bg-primary hover:bg-primary/90 transition-all duration-300 transform hover:scale-105 relative overflow-hidden group"
           >
-            <UserPlus className="mr-2 h-4 w-4" />
-            Novo Cliente
+            <span className="relative z-10 flex items-center">
+              <UserPlus className="mr-2 h-4 w-4" />
+              Novo Cliente
+            </span>
+            <span className="absolute inset-0 bg-gradient-to-r from-primary-foreground/0 via-primary-foreground/10 to-primary-foreground/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
           </Button>
-        </div>
+        </motion.div>
       </div>
 
       <motion.div
-        className="rounded-lg border shadow-sm overflow-hidden bg-card"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
+        className="rounded-xl border shadow-lg overflow-hidden bg-card/50 backdrop-blur-sm relative group"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2 }}
       >
+        <CardShineEffect />
         <Table>
           <TableHeader>
-            <TableRow className="bg-muted/50">
+            <TableRow className="bg-muted/30 hover:bg-muted/40 transition-colors duration-200">
               <TableHead className="w-[50px] font-semibold">Nº</TableHead>
               <TableHead className="font-semibold">Nome</TableHead>
               <TableHead className="font-semibold">Validade</TableHead>
@@ -210,7 +233,7 @@ export default function ClientList({ mainid }: { mainid: number }) {
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -20 }}
                   transition={{ delay: index * 0.05 }}
-                  className="group hover:bg-muted/50 transition-colors duration-200"
+                  className="group hover:bg-muted/30 transition-all duration-300"
                 >
                   <TableCell className="font-medium w-[50px]">
                     {(currentPage - 1) * ITEMS_PER_PAGE + index + 1}
@@ -250,17 +273,16 @@ export default function ClientList({ mainid }: { mainid: number }) {
                   <TableCell>
                     <div className="flex items-center gap-2">
                       <Package className="h-4 w-4 text-muted-foreground" />
-                      {client.produto ? client.produto.substring(0, 20) : 'N/A'}
+                      {client.produto ? client.produto.substring(0, 20) + '...' : 'N/A'}
                     </div>
                   </TableCell>
                   <TableCell className="text-right">
-                    <div className="flex justify-end space-x-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                    <div className="flex justify-end space-x-2 opacity-0 group-hover:opacity-100 transition-all duration-300">
                       <Button
                         variant="ghost"
                         size="icon"
-                        onClick={() => handleDownloadReport(client)}
-                        className="hover:bg-primary/10 hover:text-primary transition-colors duration-200"
-                        title="Download Report"
+                        onClick={() => handlePreviewReport(client)}
+                        className="hover:bg-primary/10 hover:text-primary transition-all duration-200 transform hover:scale-110"
                       >
                         <Download className="h-4 w-4" />
                       </Button>
@@ -268,8 +290,7 @@ export default function ClientList({ mainid }: { mainid: number }) {
                         variant="ghost"
                         size="icon"
                         onClick={() => handleEdit(client)}
-                        className="hover:bg-primary/10 hover:text-primary transition-colors duration-200"
-                        title="Edit Client"
+                        className="hover:bg-primary/10 hover:text-primary transition-all duration-200 transform hover:scale-110"
                       >
                         <Edit2 className="h-4 w-4" />
                       </Button>
@@ -277,8 +298,7 @@ export default function ClientList({ mainid }: { mainid: number }) {
                         variant="ghost"
                         size="icon"
                         onClick={() => handleDelete(client.id)}
-                        className="hover:bg-destructive/10 hover:text-destructive transition-colors duration-200"
-                        title="Delete Client"
+                        className="hover:bg-destructive/10 hover:text-destructive transition-all duration-200 transform hover:scale-110"
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -292,11 +312,17 @@ export default function ClientList({ mainid }: { mainid: number }) {
       </motion.div>
 
       {totalPages > 1 && (
-        <Pagination
-          currentPage={currentPage}
-          totalPages={totalPages}
-          onPageChange={setCurrentPage}
-        />
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.4 }}
+        >
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+          />
+        </motion.div>
       )}
 
       <ClientDialog
@@ -304,8 +330,17 @@ export default function ClientList({ mainid }: { mainid: number }) {
         onOpenChange={setIsDialogOpen}
         client={selectedClient}
         onSuccess={fetchClients}
-        mainid={mainid} // Pasar el mainid al ClientDialog
+        mainid={mainid}
       />
+
+      {selectedClientForReport && (
+        <ReportPreviewDialog
+          open={isPreviewOpen}
+          onOpenChange={setIsPreviewOpen}
+          client={selectedClientForReport}
+          onDownload={handleDownloadReport}
+        />
+      )}
     </motion.div>
   );
 }

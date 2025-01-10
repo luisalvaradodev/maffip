@@ -1,0 +1,68 @@
+
+%PDF-1.4
+1 0 obj
+<<
+  /Type /Catalog
+  /Pages 2 0 R
+>>
+endobj
+
+2 0 obj
+<<
+  /Type /Pages
+  /Count 1
+  /Kids [3 0 R]
+>>
+endobj
+
+3 0 obj
+<<
+  /Type /Page
+  /Parent 2 0 R
+  /MediaBox [0 0 595 842]
+  /Contents 4 0 R
+>>
+endobj
+
+4 0 obj
+<<
+  /Length 44
+>>
+stream
+BT
+  /F1 12 Tf
+  100 800 Td
+  (📄 Client Report) Tj
+  0 -20 Td
+  (👤 Name: 𝓐𝓵𝓿𝓪𝓻𝓸 𝓔𝓭𝔀𝓪𝓻𝓭 ♛) Tj
+  0 -20 Td
+  (🔢 Number: 556198647536) Tj
+  0 -20 Td
+  (💰 Value: R$ 35,00) Tj
+  0 -20 Td
+  (📅 Validity: 02/05/2024) Tj
+  0 -40 Td
+  (📦 Product Details:) Tj
+  0 -20 Td
+  (🛍️ Produto: NETFLIX VIA TIM
+
+📅 DATA RENOVAÇÃO: 02-05-2024 18:13:07
+👤 Usuário: victor.net42@neko2.net
+🔐 Senha: vg102030
+💲 Valor: 35.00
+
+💰 Saldo antes: 35.00
+💰 Saldo Atual: 0.00
+
+ℹ️ Informações Adicional:
+) Tj
+ET
+endstream
+endobj
+
+trailer
+<<
+  /Root 1 0 R
+  /Size 5
+>>
+%%EOF
