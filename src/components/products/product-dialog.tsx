@@ -53,15 +53,27 @@ export function ProductDialog({
     tipoConta: "padrão"
   });
   const [loading, setLoading] = useState(false);
-  const [categories, setCategories] = useState<{ id: number; nome: string }[]>([]);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [categories, setCategories] = useState<{ id: number; nome: string }[]>([]);
 
+  // Cargar categorías cada vez que se abre el diálogo
   useEffect(() => {
     if (open) {
+      const fetchCategories = async () => {
+        try {
+          const response = await fetch('/api/categories');
+          const data = await response.json();
+          setCategories(data);
+        } catch (error) {
+          console.error("Error fetching categories:", error);
+        }
+      };
+
       fetchCategories();
     }
   }, [open]);
 
+  // Actualizar el formulario cuando cambia el producto
   useEffect(() => {
     if (product) {
       setFormData(product);
@@ -79,14 +91,38 @@ export function ProductDialog({
     }
   }, [product]);
 
-  const fetchCategories = async () => {
-    try {
-      const response = await fetch("/api/categories");
-      const data = await response.json();
-      setCategories(data);
-    } catch (error) {
-      console.error("Error fetching categories:", error);
-    }
+  const getCategoryName = (categoryId: number) => {
+    const category = categories.find(cat => cat.id === categoryId);
+    return category ? category.nome : "Desconhecida";
+  };
+
+  const generatePrefabricatedText = () => {
+    const categoryName = getCategoryName(formData.categoria);
+    return `
+Nome:
+ 🖥️ ${categoryName} 🖥️
+
+Dados produto:
+${formData.produto}
+
+Dados acesso:
+Email: ${formData.email}
+Senha: ${formData.senha}
+
+Descrição:
+*🆙 SUPORTE 30 DIAS E RENOVÁVEL*
+
+*🚫 PROIBIÇÕES E PERMISSÕES 🚫*
+
+*❌ Não alterar email ou senha.*
+
+✅ Pode alterar PIN da tela.
+✅ Pode modificar todos os perfil. 
+📝 OBS: A conta é válida por 30 dias. Após esse período, será desativada, a menos que o pagamento seja feito no vencimento ou um dia antes.
+
+🚯 O descumprimento das regras resultará na perda imediata de suporte.
+👥 Atendimento: https://chat.whatsapp.com/IpsoPpql7Y70tn77tlsHhY
+    `;
   };
 
   const handleEmojiSelect = (emoji: any) => {
@@ -203,6 +239,40 @@ export function ProductDialog({
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.3 }}
           >
+            <Label htmlFor="email">Email</Label>
+            <Input
+              id="email"
+              value={formData.email}
+              onChange={(e) =>
+                setFormData({ ...formData, email: e.target.value })
+              }
+              className="transition-all duration-200 focus:ring-2 focus:ring-primary/20"
+            />
+          </motion.div>
+
+          <motion.div
+            className="space-y-2"
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.4 }}
+          >
+            <Label htmlFor="senha">Senha</Label>
+            <Input
+              id="senha"
+              value={formData.senha}
+              onChange={(e) =>
+                setFormData({ ...formData, senha: e.target.value })
+              }
+              className="transition-all duration-200 focus:ring-2 focus:ring-primary/20"
+            />
+          </motion.div>
+
+          <motion.div
+            className="space-y-2"
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.5 }}
+          >
             <Label htmlFor="tipoConta">Tipo de Conta</Label>
             <Select
               value={formData.tipoConta}
@@ -214,8 +284,8 @@ export function ProductDialog({
                 <SelectValue placeholder="Selecione o tipo de conta" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="padrão">Padrão</SelectItem>
-                <SelectItem value="telas">Telas</SelectItem>
+                <SelectItem value="padrão">Conta Padrão</SelectItem>
+                <SelectItem value="telas">Conta Telas</SelectItem>
               </SelectContent>
             </Select>
           </motion.div>
@@ -224,17 +294,17 @@ export function ProductDialog({
             className="space-y-2"
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.4 }}
+            transition={{ delay: 0.6 }}
           >
             <Label htmlFor="dados">Dados das Contas</Label>
             <Textarea
               id="dados"
               placeholder="Digite as contas no formato email|senha"
-              value={formData.dados}
+              value={generatePrefabricatedText()}
               onChange={(e) =>
                 setFormData({ ...formData, dados: e.target.value })
               }
-              className="min-h-[100px] transition-all duration-200 focus:ring-2 focus:ring-primary/20"
+              className="min-h-[200px] transition-all duration-200 focus:ring-2 focus:ring-primary/20"
             />
           </motion.div>
 
@@ -242,7 +312,7 @@ export function ProductDialog({
             className="flex items-center space-x-2"
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.5 }}
+            transition={{ delay: 0.7 }}
           >
             <Switch
               id="disponivel"
@@ -254,34 +324,6 @@ export function ProductDialog({
             />
             <Label htmlFor="disponivel">Disponível</Label>
           </motion.div>
-
-          <motion.div
-            className="space-y-2"
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.6 }}
-          >
-            <Label htmlFor="tipo">Tipo</Label>
-            <Input
-              id="tipo"
-              value={formData.tipo}
-              onChange={(e) =>
-                setFormData({ ...formData, tipo: e.target.value })
-              }
-              className="transition-all duration-200 focus:ring-2 focus:ring-primary/20"
-            />
-          </motion.div>
-
-          {formData.disponivel === 0 && (
-            <motion.div
-              className="text-sm text-blue-500"
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.7 }}
-            >
-              Etiqueta: Vendido
-            </motion.div>
-          )}
 
           <motion.div
             initial={{ opacity: 0, y: 20 }}

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Product } from "@/features/data/types";
 import {
   Table,
@@ -11,7 +11,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, Edit, Trash2, AlertCircle, Eye, Check, X } from "lucide-react";
+import { Search, Edit, Trash2, AlertCircle, Eye, Check, X, Copy } from "lucide-react";
 import { ProductDialog } from "./product-dialog";
 import {
   AlertDialog,
@@ -25,6 +25,15 @@ import {
 } from "@/components/ui/alert-dialog";
 import { motion, AnimatePresence } from "framer-motion";
 import { Pagination } from "@/components/shared/pagination";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { useToast } from "@/hooks/use-toast"; // Para notificaciones de copiado
 
 interface ProductTableProps {
   products: Product[] | null | undefined;
@@ -40,9 +49,27 @@ export function ProductTable({ products, onDelete, onUpdate }: ProductTableProps
   const [productToDelete, setProductToDelete] = useState<number | null>(null);
   const [selectedItems, setSelectedItems] = useState<number[]>([]);
   const [showTextDialog, setShowTextDialog] = useState(false);
-  
+  const [productToViewText, setProductToViewText] = useState<Product | null>(null);
+  const [categories, setCategories] = useState<{ id: number; nome: string }[]>([]);
+  const { toast } = useToast(); // Para mostrar notificaciones
+
   const ITEMS_PER_PAGE = 5;
   const [currentPage, setCurrentPage] = useState(1);
+
+  // Obtener las categorías al cargar el componente
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await fetch('/api/categories');
+        const data = await response.json();
+        setCategories(data);
+      } catch (error) {
+        console.error("Error fetching categories:", error);
+      }
+    };
+
+    fetchCategories();
+  }, []);
 
   const filteredProducts = Array.isArray(products)
     ? products.filter((product) =>
@@ -53,6 +80,55 @@ export function ProductTable({ products, onDelete, onUpdate }: ProductTableProps
   const totalPages = Math.ceil(filteredProducts.length / ITEMS_PER_PAGE);
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
   const paginatedProducts = filteredProducts.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+
+  // Función para obtener el nombre de la categoría por su ID
+  const getCategoryName = (categoryId: number) => {
+    const category = categories.find(cat => cat.id === categoryId);
+    return category ? category.nome : "Desconhecida";
+  };
+
+  // Función para generar el texto prefabricado
+  const generatePrefabricatedText = (product: Product) => {
+    const categoryName = getCategoryName(product.categoria);
+    return `
+Nome:
+ 🖥️ ${categoryName} 🖥️
+
+Dados produto:
+${product.produto}
+
+Dados acesso:
+Email: ${product.email}
+Senha: ${product.senha}
+
+Descrição:
+*🆙 SUPORTE 30 DIAS E RENOVÁVEL*
+
+*🚫 PROIBIÇÕES E PERMISSÕES 🚫*
+
+*❌ Não alterar email ou senha.*
+
+✅ Pode alterar PIN da tela.
+✅ Pode modificar todos os perfil. 
+📝 OBS: A conta é válida por 30 dias. Após esse período, será desativada, a menos que o pagamento seja feito no vencimento ou um dia antes.
+
+🚯 O descumprimento das regras resultará na perda imediata de suporte.
+👥 Atendimento: https://chat.whatsapp.com/IpsoPpql7Y70tn77tlsHhY
+    `;
+  };
+
+  // Función para copiar el texto al portapapeles
+  const handleCopyText = () => {
+    if (productToViewText) {
+      const textToCopy = generatePrefabricatedText(productToViewText);
+      navigator.clipboard.writeText(textToCopy);
+      toast({
+        title: "Texto copiado",
+        description: "El texto prefabricado ha sido copiado al portapapeles.",
+        variant: "success",
+      });
+    }
+  };
 
   const handleEdit = (product: Product) => {
     setSelectedProduct(product);
@@ -89,8 +165,8 @@ export function ProductTable({ products, onDelete, onUpdate }: ProductTableProps
   };
 
   const handleToggleSelect = (id: number) => {
-    setSelectedItems(prev => 
-      prev.includes(id) 
+    setSelectedItems(prev =>
+      prev.includes(id)
         ? prev.filter(item => item !== id)
         : [...prev, id]
     );
@@ -149,7 +225,15 @@ export function ProductTable({ products, onDelete, onUpdate }: ProductTableProps
           <Button
             variant="outline"
             size="sm"
-            onClick={() => setShowTextDialog(true)}
+            onClick={() => {
+              if (selectedItems.length === 1) {
+                const selectedProduct = products?.find(product => product.id === selectedItems[0]);
+                if (selectedProduct) {
+                  setProductToViewText(selectedProduct);
+                  setShowTextDialog(true);
+                }
+              }
+            }}
             className="flex items-center gap-2"
           >
             <Eye className="h-4 w-4" />
@@ -166,11 +250,7 @@ export function ProductTable({ products, onDelete, onUpdate }: ProductTableProps
         <Table>
           <TableHeader>
             <TableRow className="bg-muted/50">
-              <TableHead className="w-12">
-                <div className="flex items-center justify-center">
-                  #
-                </div>
-              </TableHead>
+              <TableHead className="w-12">#</TableHead>
               <TableHead className="font-semibold">Produto</TableHead>
               <TableHead className="font-semibold">Categoria</TableHead>
               <TableHead className="font-semibold">Status</TableHead>
@@ -192,21 +272,9 @@ export function ProductTable({ products, onDelete, onUpdate }: ProductTableProps
                     }`}
                     onClick={() => handleToggleSelect(product.id)}
                   >
-                    <TableCell>
-                      <div className="flex items-center justify-center">
-                        {product.id}
-                      </div>
-                    </TableCell>
-                    <TableCell className="font-medium">
-                      <div className="flex items-center gap-2">
-                        {product.produto}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        {product.categoria}
-                      </div>
-                    </TableCell>
+                    <TableCell>{product.id}</TableCell>
+                    <TableCell className="font-medium">{product.produto}</TableCell>
+                    <TableCell>{getCategoryName(product.categoria)}</TableCell>
                     <TableCell>
                       <Badge
                         variant={product.disponivel === 1 ? "success" : "secondary"}
@@ -215,7 +283,7 @@ export function ProductTable({ products, onDelete, onUpdate }: ProductTableProps
                         {product.disponivel === 1 ? "Disponível" : "Vendida"}
                       </Badge>
                     </TableCell>
-                    <TableCell>{product.tipo}</TableCell>
+                    <TableCell>{product.tipo === "padrão" ? "Conta padrão" : "Conta telas"}</TableCell>
                     <TableCell>
                       <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                         <Button
@@ -262,6 +330,7 @@ export function ProductTable({ products, onDelete, onUpdate }: ProductTableProps
       {isDialogOpen && selectedProduct && (
         <ProductDialog
           product={selectedProduct}
+          categories={categories}
           open={isDialogOpen}
           onOpenChange={setIsDialogOpen}
           onSave={handleSave}
@@ -288,6 +357,50 @@ export function ProductTable({ products, onDelete, onUpdate }: ProductTableProps
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Diálogo para ver el texto prefabricado */}
+      <Dialog open={showTextDialog} onOpenChange={setShowTextDialog}>
+        <DialogContent className="sm:max-w-[600px] rounded-lg shadow-xl border-0 bg-gradient-to-br from-white to-gray-50 dark:from-gray-900 dark:to-gray-800">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
+              Vista Previa del Texto
+            </DialogTitle>
+            <DialogDescription className="text-gray-600 dark:text-gray-400">
+              Texto generado automáticamente para el producto seleccionado.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="relative">
+            <Textarea
+              value={productToViewText ? generatePrefabricatedText(productToViewText) : ""}
+              readOnly
+              className="min-h-[300px] w-full p-4 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 resize-none"
+            />
+            <Button
+              onClick={handleCopyText}
+              variant="ghost"
+              size="sm"
+              className="absolute top-2 right-2 bg-white/90 dark:bg-gray-800/90 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+            >
+              <Copy className="h-4 w-4" />
+            </Button>
+          </div>
+          <div className="flex justify-end mt-4">
+            <Button
+              onClick={() => setShowTextDialog(false)}
+              variant="outline"
+              className="mr-2"
+            >
+              Cerrar
+            </Button>
+            <Button
+              onClick={handleCopyText}
+              className="bg-primary hover:bg-primary/90 text-white"
+            >
+              Copiar Texto
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {filteredProducts.length > ITEMS_PER_PAGE && (
         <Pagination
