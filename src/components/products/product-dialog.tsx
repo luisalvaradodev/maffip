@@ -73,7 +73,7 @@ export function ProductDialog({
     }
   }, [open]);
 
-  // Actualizar el formulario cuando cambia el producto
+  // Actualizar el formulario cuando cambia el producto o se abre el diálogo
   useEffect(() => {
     if (product) {
       setFormData(product);
@@ -89,7 +89,7 @@ export function ProductDialog({
         tipoConta: "padrão"
       });
     }
-  }, [product]);
+  }, [product, open]); // Añadimos 'open' como dependencia
 
   const getCategoryName = (categoryId: number) => {
     const category = categories.find(cat => cat.id === categoryId);
@@ -100,7 +100,7 @@ export function ProductDialog({
     const categoryName = getCategoryName(formData.categoria);
     return `
 Nome:
- 🖥️ ${categoryName} 🖥️
+  ${categoryName} 
 
 Dados produto:
 ${formData.produto}
@@ -150,12 +150,12 @@ Descrição:
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px] overflow-hidden">
+      <DialogContent className="sm:max-w-[350px] overflow-hidden">
         <DialogHeader>
-          <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
+          <DialogTitle className="text-xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
             {product ? "Editar Produto" : "Novo Produto"}
           </DialogTitle>
-          <DialogDescription>
+          <DialogDescription className="text-sm">
             Preencha os detalhes do produto abaixo
           </DialogDescription>
         </DialogHeader>
@@ -164,10 +164,10 @@ Descrição:
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
           onSubmit={handleSubmit}
-          className="space-y-4"
+          className="space-y-2"
         >
           <motion.div
-            className="space-y-2"
+            className="space-y-1"
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.1 }}
@@ -204,7 +204,7 @@ Descrição:
           </motion.div>
 
           <motion.div
-            className="space-y-2"
+            className="space-y-1"
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.2 }}
@@ -234,7 +234,7 @@ Descrição:
           </motion.div>
 
           <motion.div
-            className="space-y-2"
+            className="space-y-1"
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.3 }}
@@ -251,7 +251,7 @@ Descrição:
           </motion.div>
 
           <motion.div
-            className="space-y-2"
+            className="space-y-1"
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.4 }}
@@ -268,7 +268,7 @@ Descrição:
           </motion.div>
 
           <motion.div
-            className="space-y-2"
+            className="space-y-1"
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.5 }}
@@ -291,7 +291,7 @@ Descrição:
           </motion.div>
 
           <motion.div
-            className="space-y-2"
+            className="space-y-1"
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.6 }}
@@ -304,7 +304,7 @@ Descrição:
               onChange={(e) =>
                 setFormData({ ...formData, dados: e.target.value })
               }
-              className="min-h-[200px] transition-all duration-200 focus:ring-2 focus:ring-primary/20"
+              className="min-h-[150px] transition-all duration-200 focus:ring-2 focus:ring-primary/20"
             />
           </motion.div>
 

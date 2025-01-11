@@ -294,7 +294,7 @@ export default function Home() {
                       placeholder="Números selecionados aparecerão aqui"
                       value={giftData.numero}
                       readOnly
-                      className="transition-all duration-200 focus:ring-2 focus:ring-blue-500 bg-gray-100"
+                      className="transition-all duration-200 focus:ring-2 focus:ring-blue-500 bg-gray-100 dark:bg-gray-800"
                     />
                   </div>
                   <Button
@@ -430,7 +430,7 @@ export default function Home() {
                                   </span>
                                 )}
                               </div>
-                              <div className="text-sm text-gray-500">{contact.numero}</div>
+                              <div className="text-sm text-gray-500 dark:text-gray-400">{contact.numero}</div>
                             </div>
                           </motion.li>
                         ))}
@@ -471,7 +471,7 @@ export default function Home() {
                   </Button>
                 </div>
               </CardContent>
-              <CardFooter className="text-sm text-gray-500">
+              <CardFooter className="text-sm text-gray-500 dark:text-gray-400">
                 Os contatos selecionados receberão a mensagem via WhatsApp
               </CardFooter>
             </Card>

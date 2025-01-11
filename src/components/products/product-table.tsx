@@ -92,7 +92,7 @@ export function ProductTable({ products, onDelete, onUpdate }: ProductTableProps
     const categoryName = getCategoryName(product.categoria);
     return `
 Nome:
- 🖥️ ${categoryName} 🖥️
+  ${categoryName} 
 
 Dados produto:
 ${product.produto}

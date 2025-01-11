@@ -19,7 +19,7 @@ interface CategoryDialogProps {
   category: Category | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSave: (category: Category) => void;
+  onSave: (category: Category) => Promise<void>; // Asegúrate de que onSave devuelva una Promise
 }
 
 export function CategoryDialog({
@@ -45,26 +45,28 @@ export function CategoryDialog({
       setFormData({
         nome: "",
         valor: 0,
-        descricao: "",
+        descricao: `*🆙 SUPORTE 30 DIAS E RENOVÁVEL*\n\n*🚫 PROIBIÇÕES E PERMISSÕES 🚫*\n\n*❌ Não alterar email ou senha.*\n\n✅ Pode alterar PIN da tela.\n✅ Pode modificar todos os perfil.\n📝 OBS: A conta é válida por 30 dias. Após esse período, será desativada, a menos que o pagamento seja feito no vencimento ou um dia antes.\n\n🚯 O descumprimento das regras resultará na perda imediata de suporte.\n👥 Atendimento: https://chat.whatsapp.com/IpsoPpql7Y70tn77tlsHhY`,
         status: 0,
         img: "",
         tipo: "",
       });
     }
   }, [category]);
-  
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     try {
-      if (category) {
-        await onSave({ ...category, ...formData } as Category);
-      }
-      onOpenChange(false);
+      await onSave(formData as Category); // Espera a que onSave se complete
+    } catch (error) {
+      console.error("Error saving category:", error);
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleStatusChange = (checked: boolean) => {
+    setFormData((prev) => ({ ...prev, status: checked ? 1 : 0 }));
   };
 
   return (
@@ -147,9 +149,7 @@ export function CategoryDialog({
             <Switch
               id="status"
               checked={formData.status === 1}
-              onCheckedChange={(checked) =>
-                setFormData({ ...formData, status: checked ? 1 : 0 })
-              }
+              onCheckedChange={handleStatusChange}
               className="data-[state=checked]:bg-green-500"
             />
             <Label htmlFor="status">Ativo</Label>

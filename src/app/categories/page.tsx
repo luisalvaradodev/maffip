@@ -50,7 +50,7 @@ export default function CategoriesPage() {
             : "Categoria criada com sucesso"
         );
         fetchCategories();
-        setSelectedCategory(null); // Limpia la categoría seleccionada
+        setIsDialogOpen(false); // Cierra el diálogo después de guardar
       } else {
         toast.error("Erro ao salvar categoria");
       }
@@ -58,7 +58,6 @@ export default function CategoriesPage() {
       toast.error("Erro ao salvar categoria");
     }
   };
-  
 
   const handleDelete = async (id: number) => {
     try {
@@ -94,22 +93,14 @@ export default function CategoriesPage() {
           </h1>
         </div>
         <Button
-  onClick={() => {
-    setSelectedCategory({
-      nome: "",
-      valor: 0,
-      descricao: "",
-      status: 0,
-      img: "",
-      tipo: "",
-    } as Category); // Crear un objeto vacío para nueva categoría
-    setIsDialogOpen(true);
-  }}
-  className="transition-all duration-200 hover:scale-105"
->
-  <Plus className="mr-2 h-4 w-4" /> Nova Categoria
-</Button>
-
+          onClick={() => {
+            setSelectedCategory(null); // Asegúrate de que selectedCategory sea null para una nueva categoría
+            setIsDialogOpen(true);
+          }}
+          className="transition-all duration-200 hover:scale-105"
+        >
+          <Plus className="mr-2 h-4 w-4" /> Nova Categoria
+        </Button>
       </motion.div>
 
       <motion.div

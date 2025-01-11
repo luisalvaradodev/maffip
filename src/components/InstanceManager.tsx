@@ -136,29 +136,40 @@ export function InstanceManager() {
 
   const handleDelete = async (instanceName: string) => {
     try {
-      setDeletingInstance(instanceName)
-      const response = await fetch(`/api/instances/${instanceName}`, { method: 'DELETE' })
-      if (response.ok) {
-        toast({
-          title: "Instance deleted",
-          description: `Instance ${instanceName} has been deleted.`,
-        })
-        fetchInstances()
+      setDeletingInstance(instanceName);
+      const response = await fetch(`/api/instances?instanceName=${instanceName}`, {
+        method: 'DELETE',
+      });
+  
+      // Verificar si la respuesta es JSON
+      const contentType = response.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        const data = await response.json();
+        if (response.ok) {
+          toast({
+            title: "Instance deleted",
+            description: `Instance ${instanceName} has been deleted.`,
+          });
+          fetchInstances();
+        } else {
+          throw new Error(data.error || 'Failed to delete instance');
+        }
       } else {
-        const errorData = await response.json()
-        throw new Error(errorData.error || 'Failed to delete instance')
+        // Si la respuesta no es JSON, manejar el error
+        const text = await response.text();
+        throw new Error(`Unexpected response: ${text}`);
       }
     } catch (error) {
-      console.error('Error deleting instance:', error)
+      console.error('Error deleting instance:', error);
       toast({
         title: "Error",
         description: error.message || "Failed to delete instance. Please try again.",
         variant: "destructive",
-      })
+      });
     } finally {
-      setDeletingInstance(null)
+      setDeletingInstance(null);
     }
-  }
+  };
 
   const handleConnect = async (instanceName: string) => {
     try {
