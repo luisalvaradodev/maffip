@@ -22,7 +22,7 @@ export function ErrorDisplay({ message, onRetry }: ErrorDisplayProps) {
           variant="outline"
           className="mt-4 hover:scale-105 transition-transform"
         >
-          Try Again
+          Tentar Novamente
         </Button>
       )}
     </motion.div>

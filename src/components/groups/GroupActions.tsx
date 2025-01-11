@@ -13,20 +13,20 @@ export function GroupActions({ groupCount, onRefresh, onDeleteAll }: GroupAction
   const { toast } = useToast()
 
   const handleDeleteAll = () => {
-    if (window.confirm("Are you sure you want to delete all groups?")) {
+    if (window.confirm("Tem certeza que deseja excluir todos os grupos?")) {
       onDeleteAll()
       toast({
-        title: "Success",
-        description: "All groups have been deleted.",
+        title: "Sucesso",
+        description: "Todos os grupos foram excluídos.",
         variant: "default",
       })
     }
   }
 
   return (
-    <div className="flex justify-between items-center mb-4 p-4 bg-background rounded-lg shadow-sm">
+    <div className="flex justify-between items-center mb-4 p-4 bg-background rounded-lg shadow-sm border">
       <p className="text-sm text-muted-foreground">
-        Total Groups: <span className="font-semibold text-primary">{groupCount}</span>
+        Total de Grupos: <span className="font-semibold text-primary">{groupCount}</span>
       </p>
       <div className="space-x-2">
         <motion.div
@@ -36,7 +36,7 @@ export function GroupActions({ groupCount, onRefresh, onDeleteAll }: GroupAction
         >
           <Button variant="outline" size="sm" onClick={onRefresh}>
             <RefreshCw className="mr-2 h-4 w-4" />
-            Refresh
+            Atualizar
           </Button>
         </motion.div>
         <motion.div
@@ -46,7 +46,7 @@ export function GroupActions({ groupCount, onRefresh, onDeleteAll }: GroupAction
         >
           <Button variant="destructive" size="sm" onClick={handleDeleteAll}>
             <Trash className="mr-2 h-4 w-4" />
-            Delete All
+            Excluir Todos
           </Button>
         </motion.div>
       </div>

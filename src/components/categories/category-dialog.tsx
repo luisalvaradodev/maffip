@@ -115,10 +115,11 @@ export function CategoryDialog({
               id="valor"
               type="number"
               step="0.01"
-              value={formData.valor}
-              onChange={(e) =>
-                setFormData({ ...formData, valor: parseFloat(e.target.value) })
-              }
+              value={isNaN(formData.valor) ? "" : formData.valor} // Si es NaN, se muestra una cadena vacía
+              onChange={(e) => {
+                const value = parseFloat(e.target.value);
+                setFormData({ ...formData, valor: isNaN(value) ? 0 : value }); // Si es NaN, se asigna 0
+              }}
               className="transition-all duration-200 focus:ring-2 focus:ring-primary/20"
             />
           </motion.div>

@@ -28,26 +28,36 @@ export default function AdminDashboard() {
   const [error, setError] = useState<string | null>(null);
   const [isCreateUserDialogOpen, setIsCreateUserDialogOpen] = useState(false);
 
-  useEffect(() => {
-    fetchData();
-  }, []);
-
+  // Función para obtener los datos
   const fetchData = async () => {
     try {
-      setLoading(true);
       setError(null);
       await Promise.all([fetchUsers(), fetchInstances()]);
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {
-      setError("Failed to load dashboard data. Please try again.");
+      setError("Falha ao carregar os dados do painel. Por favor, tente novamente.");
     } finally {
       setLoading(false);
     }
   };
 
+  // Efecto para cargar los datos iniciales
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  // Efecto para refrescar los datos cada segundo
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      fetchData();
+    }, 1000); // Refresca cada 1 segundo (1000 ms)
+
+    return () => clearInterval(intervalId); // Limpia el intervalo al desmontar el componente
+  }, []);
+
   const fetchUsers = async () => {
     const response = await fetch("/api/users");
-    if (!response.ok) throw new Error("Failed to fetch users");
+    if (!response.ok) throw new Error("Falha ao buscar usuários");
     const data = await response.json();
     if (Array.isArray(data)) {
       setUsers(data);
@@ -56,7 +66,7 @@ export default function AdminDashboard() {
 
   const fetchInstances = async () => {
     const response = await fetch("/api/instances");
-    if (!response.ok) throw new Error("Failed to fetch instances");
+    if (!response.ok) throw new Error("Falha ao buscar instâncias");
     const data = await response.json();
     if (Array.isArray(data)) {
       setInstances(data);
@@ -75,17 +85,17 @@ export default function AdminDashboard() {
       if (response.ok) {
         await fetchData();
         toast({
-          title: "Success",
-          description: "User and instance have been created successfully.",
+          title: "Sucesso",
+          description: "Usuário e instância foram criados com sucesso.",
         });
       } else {
-        throw new Error("Failed to create user and instance");
+        throw new Error("Falha ao criar usuário e instância");
       }
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {
       toast({
-        title: "Error",
-        description: "Failed to create user and instance. Please try again.",
+        title: "Erro",
+        description: "Falha ao criar usuário e instância. Por favor, tente novamente.",
         variant: "destructive",
       });
     }
@@ -102,17 +112,17 @@ export default function AdminDashboard() {
       if (response.ok) {
         await fetchUsers();
         toast({
-          title: "Success",
-          description: "User has been updated successfully.",
+          title: "Sucesso",
+          description: "Usuário foi atualizado com sucesso.",
         });
       } else {
-        throw new Error("Failed to update user");
+        throw new Error("Falha ao atualizar usuário");
       }
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {
       toast({
-        title: "Error",
-        description: "Failed to update user. Please try again.",
+        title: "Erro",
+        description: "Falha ao atualizar usuário. Por favor, tente novamente.",
         variant: "destructive",
       });
     }
@@ -127,17 +137,17 @@ export default function AdminDashboard() {
       if (response.ok) {
         await fetchUsers();
         toast({
-          title: "Success",
-          description: "User has been deleted successfully.",
+          title: "Sucesso",
+          description: "Usuário foi excluído com sucesso.",
         });
       } else {
-        throw new Error("Failed to delete user");
+        throw new Error("Falha ao excluir usuário");
       }
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {
       toast({
-        title: "Error",
-        description: "Failed to delete user. Please try again.",
+        title: "Erro",
+        description: "Falha ao excluir usuário. Por favor, tente novamente.",
         variant: "destructive",
       });
     }
@@ -164,10 +174,10 @@ export default function AdminDashboard() {
         <Tabs defaultValue="users" className="space-y-4">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="users" className="transition-all duration-200 hover:bg-muted">
-              Users
+              Usuários
             </TabsTrigger>
             <TabsTrigger value="instances" className="transition-all duration-200 hover:bg-muted">
-              Instances
+              Instâncias
             </TabsTrigger>
           </TabsList>
           <TabsContent value="users">

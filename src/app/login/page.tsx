@@ -47,18 +47,6 @@ const Comet = ({ x, y, duration }: { x: number; y: number; duration: number }) =
   );
 };
 
-// Componente para las partículas del estallido
-const Particle = ({ id, angle, distance }: { id: number; angle: number; distance: number }) => {
-  return (
-    <motion.div
-      initial={{ opacity: 1, scale: 0 }}
-      animate={{ opacity: 0, scale: 1, x: distance * Math.cos(angle), y: distance * Math.sin(angle) }}
-      transition={{ duration: 1, ease: 'easeOut' }}
-      className="absolute w-2 h-2 bg-primary rounded-full"
-    />
-  );
-};
-
 export default function LoginPage() {
   const [login, setLogin] = useState('');
   const [password, setPassword] = useState('');
@@ -71,7 +59,8 @@ export default function LoginPage() {
   const [comets, setComets] = useState<{ x: number; y: number; duration: number }[]>([]);
   const router = useRouter();
   const { setUser } = useUser();
-  const { theme, setTheme } = useTheme();
+  const { theme, resolvedTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
 
   // Generar estrellas y cometas después de que el componente se monte
   useEffect(() => {
@@ -87,15 +76,9 @@ export default function LoginPage() {
       duration: Math.random() * 10 + 5,
     }));
     setComets(generatedComets);
-  }, []);
 
-  // Sincronizar el tema después de que el componente se monte
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const savedTheme = localStorage.getItem('theme') || 'light';
-      setTheme(savedTheme);
-    }
-  }, [setTheme]);
+    setMounted(true);
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -163,8 +146,10 @@ export default function LoginPage() {
     }
   };
 
+  if (!mounted) return null;
+
   return (
-    <div className="flex items-center justify-center min-h-screen p-4 relative overflow-hidden">
+    <div className="flex items-center justify-center min-h-screen p-4 relative overflow-hidden bg-background">
       {/* Fondo dinámico con estrellas y cometas */}
       <div className="absolute inset-0 z-0">
         {stars.map((star, i) => (
@@ -203,7 +188,7 @@ export default function LoginPage() {
             transition={{ duration: 1, ease: 'easeInOut' }}
           >
             <span className="text-primary">VM</span>
-            <span className={theme === 'dark' ? 'text-white' : 'text-black'}>STORE</span>
+            <span className={resolvedTheme === 'dark' ? 'text-white' : 'text-black'}>STORE</span>
             <span className="text-primary">PRO</span>
           </motion.h1>
         </motion.div>
@@ -218,11 +203,12 @@ export default function LoginPage() {
               transition={{ duration: 1 }}
             >
               {[...Array(20)].map((_, i) => (
-                <Particle
+                <motion.div
                   key={`particle-${i}`}
-                  id={i}
-                  angle={(i * 18 * Math.PI) / 180}
-                  distance={100}
+                  initial={{ opacity: 1, scale: 0 }}
+                  animate={{ opacity: 0, scale: 1, x: 100 * Math.cos((i * 18 * Math.PI) / 180), y: 100 * Math.sin((i * 18 * Math.PI) / 180) }}
+                  transition={{ duration: 1, ease: 'easeOut' }}
+                  className="absolute w-2 h-2 bg-primary rounded-full"
                 />
               ))}
             </motion.div>
@@ -230,9 +216,11 @@ export default function LoginPage() {
         </AnimatePresence>
 
         {/* Formulario de login */}
-        <form
+        <motion.form
           onSubmit={handleSubmit}
-          className="bg-background border border-border rounded-2xl shadow-lg p-10"
+          className="bg-background border border-border rounded-2xl shadow-lg p-10 relative overflow-hidden"
+          animate={isLoggedIn ? { scale: 0, opacity: 0 } : { scale: 1, opacity: 1 }}
+          transition={{ duration: 0.5, ease: 'easeInOut' }}
         >
           <div className="space-y-8">
             {/* Campo de usuario */}
@@ -320,7 +308,21 @@ export default function LoginPage() {
               'Entrar'
             )}
           </Button>
-        </form>
+        </motion.form>
+
+        {/* Carrito de compras que aparece después del login */}
+        <AnimatePresence>
+          {isLoggedIn && (
+            <motion.div
+              className="absolute inset-0 flex items-center justify-center"
+              initial={{ scale: 0, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ duration: 0.5, ease: 'easeInOut' }}
+            >
+              <ShoppingBag className="h-32 w-32 text-primary" />
+            </motion.div>
+          )}
+        </AnimatePresence>
       </motion.div>
     </div>
   );

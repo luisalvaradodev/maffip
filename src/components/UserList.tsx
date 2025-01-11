@@ -86,7 +86,7 @@ export function UserList({ users, onUpdate, onDelete }: UserListProps) {
       <DataTableToolbar
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
-        placeholder="Search users..."
+        placeholder="Pesquisar usuários..."
       />
       
       <div className="rounded-md border overflow-hidden bg-card">
@@ -94,13 +94,13 @@ export function UserList({ users, onUpdate, onDelete }: UserListProps) {
           <TableHeader>
             <TableRow>
               <TableHead className="w-[100px]">ID</TableHead>
-              <TableHead>User</TableHead>
-              <TableHead>Permission</TableHead>
+              <TableHead>Usuário</TableHead>
+              <TableHead>Permissão</TableHead>
               <TableHead>Status</TableHead>
-              <TableHead>Number</TableHead>
-              <TableHead>Bonus</TableHead>
-              <TableHead>Affiliate</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
+              <TableHead>Número</TableHead>
+              <TableHead>Bônus</TableHead>
+              <TableHead>Afiliado</TableHead>
+              <TableHead className="text-right">Ações</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -138,7 +138,7 @@ export function UserList({ users, onUpdate, onDelete }: UserListProps) {
                         variant={user.permissao === 1 ? "default" : "secondary"}
                         className="transition-all hover:scale-105"
                       >
-                        {user.permissao === 1 ? 'Admin' : 'User'}
+                        {user.permissao === 1 ? 'Admin' : 'Usuário'}
                       </Badge>
                     </TableCell>
                     <TableCell>
@@ -146,7 +146,7 @@ export function UserList({ users, onUpdate, onDelete }: UserListProps) {
                         variant={user.status === 'active' ? "success" : "warning"}
                         className="transition-all hover:scale-105"
                       >
-                        {user.status}
+                        {user.status === 'active' ? 'Ativo' : 'Inativo'}
                       </Badge>
                     </TableCell>
                     <TableCell>{user.numero}</TableCell>
@@ -161,7 +161,7 @@ export function UserList({ users, onUpdate, onDelete }: UserListProps) {
                           className="transition-all hover:scale-105"
                         >
                           <Edit className="h-4 w-4 mr-1" />
-                          Edit
+                          Editar
                         </Button>
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
@@ -171,24 +171,24 @@ export function UserList({ users, onUpdate, onDelete }: UserListProps) {
                               className="transition-all hover:scale-105"
                             >
                               <Trash2 className="h-4 w-4 mr-1" />
-                              Delete
+                              Excluir
                             </Button>
                           </AlertDialogTrigger>
                           <AlertDialogContent>
                             <AlertDialogHeader>
-                              <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                              <AlertDialogTitle>Tem certeza?</AlertDialogTitle>
                               <AlertDialogDescription>
-                                This action cannot be undone. This will permanently delete the user
-                                and remove their data from our servers.
+                                Esta ação não pode ser desfeita. Isso excluirá permanentemente o usuário
+                                e removerá seus dados de nossos servidores.
                               </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
                               <AlertDialogAction 
                                 onClick={() => onDelete(user.id)}
                                 className="transition-all hover:scale-105"
                               >
-                                Continue
+                                Continuar
                               </AlertDialogAction>
                             </AlertDialogFooter>
                           </AlertDialogContent>

@@ -22,7 +22,7 @@ export function AppSidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const [isContactsOpen, setIsContactsOpen] = useState(false);
+  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
 
   if (loading || !user) return null;
 
@@ -34,12 +34,13 @@ export function AppSidebar() {
 
   const items = [
     { title: 'Admin', url: `/admin`, icon: Home },
-    { title: 'Profile', url: `/profile/${user.id}`, icon: User },
+    { title: 'Perfil', url: `/profile/${user.id}`, icon: User },
     { 
       title: 'Bot Contas', 
       icon: Database,
       subItems: [
         { title: 'Meus produtos', url: `/products/${user.id}` },
+        { title: 'Meus categorias', url: `/categories/${user.id}` },
         { title: 'CC/GG', url: `/categoriaCC/${user.id}` },
         { title: 'Textos', url: `/textos/${user.id}` },
       ]
@@ -52,9 +53,8 @@ export function AppSidebar() {
         { title: 'Clientes', url: `/clients/${user.id}` },
       ]
     },
-    { title: 'Gifts', url: `/gifts/${user.id}`, icon: Gift },
+    { title: 'Presentes', url: `/gifts/${user.id}`, icon: Gift },
     { title: 'Grupos', url: `/groups/${user.id}`, icon: MessagesSquare },
-    { title: 'Categorias', url: `/categories/${user.id}`, icon: Group },
   ];
 
   if (user.permissao === 1) {
@@ -64,6 +64,10 @@ export function AppSidebar() {
       { title: 'Instance Management', url: '/admin/instances', icon: Settings }
     );
   }
+
+  const toggleDropdown = (title: string) => {
+    setOpenDropdown(openDropdown === title ? null : title);
+  };
 
   return (
     <Sidebar className={`
@@ -136,7 +140,7 @@ export function AppSidebar() {
                     {hasSubItems ? (
                       <>
                         <SidebarMenuButton 
-                          onClick={() => setIsContactsOpen(!isContactsOpen)}
+                          onClick={() => toggleDropdown(item.title)}
                           className={`
                             group relative flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg
                             transition-all duration-200 ease-out
@@ -160,13 +164,13 @@ export function AppSidebar() {
                           {!isCollapsed && (
                             <ChevronDown className={`
                               h-4 w-4 text-gray-400 transition-transform duration-200
-                              ${isContactsOpen ? 'rotate-180' : ''}
+                              ${openDropdown === item.title ? 'rotate-180' : ''}
                             `} />
                           )}
                         </SidebarMenuButton>
 
                         <AnimatePresence>
-                          {isContactsOpen && !isCollapsed && (
+                          {openDropdown === item.title && !isCollapsed && (
                             <motion.div
                               initial={{ opacity: 0, height: 0 }}
                               animate={{ opacity: 1, height: 'auto' }}

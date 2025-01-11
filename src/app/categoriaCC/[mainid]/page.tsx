@@ -235,8 +235,8 @@ export default function CategoriaCCPage() {
           className="space-y-8"
         >
           {/* Categories Card */}
-          <Card className="overflow-hidden border-none shadow-lg dark:bg-gray-800/50 backdrop-blur-sm">
-            <CardHeader className="flex flex-row items-center justify-between bg-gradient-to-r from-primary/10 to-primary/5 dark:from-primary/5 dark:to-primary/10">
+          <Card className="overflow-hidden border-none shadow-lg dark:bg-gray-800/50 backdrop-blur-sm rounded-lg">
+            <CardHeader className="flex flex-row items-center justify-between bg-gradient-to-r from-primary/10 to-primary/5 dark:from-primary/5 dark:to-primary/10 rounded-t-lg">
               <div className="flex items-center space-x-2">
                 <CreditCard className="w-6 h-6 text-primary" />
                 <CardTitle>Categorias CC</CardTitle>
@@ -245,7 +245,7 @@ export default function CategoriaCCPage() {
               <Dialog open={isAddCategoryOpen} onOpenChange={setIsAddCategoryOpen}>
                 <DialogTrigger asChild>
                   <Button 
-                    className="transition-all duration-300 hover:scale-105 hover:shadow-lg"
+                    className="transition-all duration-300 hover:scale-105 hover:shadow-lg rounded-lg"
                     disabled={isLoading}
                   >
                     <Plus className="mr-2 h-4 w-4" /> 
@@ -262,7 +262,7 @@ export default function CategoriaCCPage() {
                       <Input
                         value={newCategory.nome}
                         onChange={(e) => setNewCategory({ ...newCategory, nome: e.target.value })}
-                        className="w-full rounded-md border border-border/50 focus:border-primary focus:ring-1 focus:ring-primary"
+                        className="w-full rounded-lg border border-border/50 focus:border-primary focus:ring-1 focus:ring-primary"
                         placeholder="Digite o nome da categoria"
                       />
                     </div>
@@ -272,7 +272,7 @@ export default function CategoriaCCPage() {
                         type="number"
                         value={newCategory.valor}
                         onChange={(e) => setNewCategory({ ...newCategory, valor: parseFloat(e.target.value) })}
-                        className="w-full rounded-md border border-border/50 focus:border-primary focus:ring-1 focus:ring-primary"
+                        className="w-full rounded-lg border border-border/50 focus:border-primary focus:ring-1 focus:ring-primary"
                         placeholder="Digite o valor da categoria"
                       />
                     </div>
@@ -281,7 +281,7 @@ export default function CategoriaCCPage() {
                       <Input
                         value={newCategory.img || ''}
                         onChange={(e) => setNewCategory({ ...newCategory, img: e.target.value })}
-                        className="w-full rounded-md border border-border/50 focus:border-primary focus:ring-1 focus:ring-primary"
+                        className="w-full rounded-lg border border-border/50 focus:border-primary focus:ring-1 focus:ring-primary"
                         placeholder="Digite a URL da imagem"
                       />
                     </div>
@@ -290,7 +290,7 @@ export default function CategoriaCCPage() {
                       <Switch
                         checked={newCategory.ativo === 1}
                         onCheckedChange={(checked) => setNewCategory({ ...newCategory, ativo: checked ? 1 : 0 })}
-                        className="data-[state=checked]:bg-primary"
+                        className="data-[state=checked]:bg-primary rounded-full"
                       />
                     </div>
                   </div>
@@ -298,7 +298,7 @@ export default function CategoriaCCPage() {
                     <Button 
                       onClick={handleCreateCategory}
                       disabled={isSaving}
-                      className="w-full rounded-md bg-primary text-white hover:bg-primary/90 transition-all duration-300 hover:scale-105 hover:shadow-lg"
+                      className="w-full rounded-lg bg-primary text-white hover:bg-primary/90 transition-all duration-300 hover:scale-105 hover:shadow-lg"
                     >
                       {isSaving ? (
                         <>
@@ -366,7 +366,7 @@ export default function CategoriaCCPage() {
                             <TableCell>
                               <Switch
                                 checked={category.ativo === 1}
-                                className="pointer-events-none"
+                                className="pointer-events-none rounded-full"
                               />
                             </TableCell>
                             <TableCell>
@@ -376,7 +376,7 @@ export default function CategoriaCCPage() {
                                     <Button
                                       variant="outline"
                                       size="icon"
-                                      className="hover:bg-primary/10"
+                                      className="hover:bg-primary/10 rounded-lg"
                                       onClick={() => setEditingCategory(category)}
                                     >
                                       <Edit className="h-4 w-4" />
@@ -392,7 +392,7 @@ export default function CategoriaCCPage() {
                                         <Input
                                           value={editingCategory?.nome || ''}
                                           onChange={(e) => setEditingCategory(editingCategory ? { ...editingCategory, nome: e.target.value } : null)}
-                                          className="w-full rounded-md border border-border/50 focus:border-primary focus:ring-1 focus:ring-primary"
+                                          className="w-full rounded-lg border border-border/50 focus:border-primary focus:ring-1 focus:ring-primary"
                                           placeholder="Digite o nome da categoria"
                                         />
                                       </div>
@@ -402,7 +402,7 @@ export default function CategoriaCCPage() {
                                           type="number"
                                           value={editingCategory?.valor || 0}
                                           onChange={(e) => setEditingCategory(editingCategory ? { ...editingCategory, valor: parseFloat(e.target.value) } : null)}
-                                          className="w-full rounded-md border border-border/50 focus:border-primary focus:ring-1 focus:ring-primary"
+                                          className="w-full rounded-lg border border-border/50 focus:border-primary focus:ring-1 focus:ring-primary"
                                           placeholder="Digite o valor da categoria"
                                         />
                                       </div>
@@ -411,7 +411,7 @@ export default function CategoriaCCPage() {
                                         <Input
                                           value={editingCategory?.img || ''}
                                           onChange={(e) => setEditingCategory(editingCategory ? { ...editingCategory, img: e.target.value } : null)}
-                                          className="w-full rounded-md border border-border/50 focus:border-primary focus:ring-1 focus:ring-primary"
+                                          className="w-full rounded-lg border border-border/50 focus:border-primary focus:ring-1 focus:ring-primary"
                                           placeholder="Digite a URL da imagem"
                                         />
                                       </div>
@@ -420,7 +420,7 @@ export default function CategoriaCCPage() {
                                         <Switch
                                           checked={editingCategory?.ativo === 1}
                                           onCheckedChange={(checked) => setEditingCategory(editingCategory ? { ...editingCategory, ativo: checked ? 1 : 0 } : null)}
-                                          className="data-[state=checked]:bg-primary"
+                                          className="data-[state=checked]:bg-primary rounded-full"
                                         />
                                       </div>
                                     </div>
@@ -428,7 +428,7 @@ export default function CategoriaCCPage() {
                                       <Button 
                                         onClick={handleUpdateCategory}
                                         disabled={isSaving}
-                                        className="w-full rounded-md bg-primary text-white hover:bg-primary/90 transition-all duration-300 hover:scale-105 hover:shadow-lg"
+                                        className="w-full rounded-lg bg-primary text-white hover:bg-primary/90 transition-all duration-300 hover:scale-105 hover:shadow-lg"
                                       >
                                         {isSaving ? (
                                           <>
@@ -445,7 +445,7 @@ export default function CategoriaCCPage() {
                                 <Button
                                   variant="destructive"
                                   size="icon"
-                                  className="hover:bg-destructive/90"
+                                  className="hover:bg-destructive/90 rounded-lg"
                                   onClick={() => handleDeleteCategory(category.id)}
                                   disabled={isDeleting === category.id}
                                 >
@@ -468,8 +468,8 @@ export default function CategoriaCCPage() {
           </Card>
 
           {/* Add Product Card */}
-          <Card className="border-none shadow-lg dark:bg-gray-800/50 backdrop-blur-sm">
-            <CardHeader className="bg-gradient-to-r from-primary/10 to-primary/5 dark:from-primary/5 dark:to-primary/10">
+          <Card className="border-none shadow-lg dark:bg-gray-800/50 backdrop-blur-sm rounded-lg">
+            <CardHeader className="bg-gradient-to-r from-primary/10 to-primary/5 dark:from-primary/5 dark:to-primary/10 rounded-t-lg">
               <CardTitle>Adicionar CC/GG</CardTitle>
             </CardHeader>
             <CardContent className="p-6">
@@ -485,15 +485,15 @@ export default function CategoriaCCPage() {
                     Categoria <span className="text-red-500">*</span>
                   </Label>
                   <Select onValueChange={handleCategoryChange}>
-                    <SelectTrigger className="w-full">
+                    <SelectTrigger className="w-full rounded-lg">
                       <SelectValue placeholder="Selecione uma categoria" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="rounded-lg">
                       {categories.map((category) => (
                         <SelectItem 
                           key={category.id} 
                           value={category.id.toString()}
-                          className="cursor-pointer"
+                          className="cursor-pointer rounded-lg"
                         >
                           {category.nome} - R$ {Number(category.valor).toFixed(2)}
                         </SelectItem>
@@ -509,6 +509,7 @@ export default function CategoriaCCPage() {
                       checked={newProduct.is_cc}
                       onCheckedChange={(checked) => 
                         setNewProduct({ ...newProduct, is_cc: checked as boolean })}
+                      className="rounded-lg"
                     />
                     <Label htmlFor="is_cc">CC</Label>
                   </div>
@@ -518,6 +519,7 @@ export default function CategoriaCCPage() {
                       checked={newProduct.is_gg}
                       onCheckedChange={(checked) => 
                         setNewProduct({ ...newProduct, is_gg: checked as boolean })}
+                      className="rounded-lg"
                     />
                     <Label htmlFor="is_gg">GG</Label>
                   </div>
@@ -531,7 +533,7 @@ export default function CategoriaCCPage() {
                     value={newProduct.texto}
                     onChange={(e) => setNewProduct({ ...newProduct, texto: e.target.value })}
                     rows={4}
-                    className="resize-none"
+                    className="resize-none rounded-lg"
                   />
                 </div>
 
@@ -545,13 +547,13 @@ export default function CategoriaCCPage() {
                     placeholder="Número do cartão, data de validade e CVV"
                     rows={6}
                     required
-                    className="resize-none"
+                    className="resize-none rounded-lg"
                   />
                 </div>
 
                 <Button
                   type="submit"
-                  className="w-full transition-all duration-300 hover:scale-105 hover:shadow-lg"
+                  className="w-full transition-all duration-300 hover:scale-105 hover:shadow-lg rounded-lg"
                   disabled={isSaving}
                 >
                   {isSaving ? (

@@ -28,7 +28,7 @@ interface Group {
 interface GroupListProps {
   groups: Group[]
   loading: boolean
-  onRefresh: () => void // Función para refrescar la lista de grupos
+  onRefresh: () => void // Função para atualizar a lista de grupos
   entriesPerPage: number
   onToggleLog: (groupId: number, type: 'log' | 'log_adm') => Promise<void>
 }
@@ -38,19 +38,19 @@ export function GroupList({ groups, loading, entriesPerPage, onRefresh, onToggle
   const [currentPage, setCurrentPage] = useState(1)
   const { toast } = useToast()
 
-  // Sincronizar el estado local con los grupos recibidos como prop
+  // Sincronizar o estado local com os grupos recebidos como prop
   useEffect(() => {
     setLocalGroups(groups)
   }, [groups])
 
-  // Calcular el número total de páginas y los grupos paginados
+  // Calcular o número total de páginas e os grupos paginados
   const totalPages = Math.ceil(localGroups.length / entriesPerPage)
   const paginatedGroups = localGroups.slice(
     (currentPage - 1) * entriesPerPage,
     currentPage * entriesPerPage
   )
 
-  // Función para alternar el estado de log o log_adm
+  // Função para alternar o estado de log ou log_adm
   const handleToggleLog = async (group: Group, type: 'log' | 'log_adm') => {
     try {
       await onToggleLog(group.id, type)
@@ -58,24 +58,24 @@ export function GroupList({ groups, loading, entriesPerPage, onRefresh, onToggle
         prevGroups.map(g => (g.id === group.id ? { ...g, [type]: !g[type] } : g))
       )
       toast({
-        title: "Success",
-        description: `${type === 'log' ? 'Logging' : 'Admin logging'} ${!group[type] ? 'enabled' : 'disabled'} for ${group.nome}`,
+        title: "Sucesso",
+        description: `${type === 'log' ? 'Log' : 'Log de admin'} ${!group[type] ? 'ativado' : 'desativado'} para ${group.nome}`,
       })
     } catch (error) {
-      console.error('Error toggling log:', error)
+      console.error('Erro ao alternar log:', error)
       toast({
-        title: "Error",
-        description: "Failed to toggle log. Please try again.",
+        title: "Erro",
+        description: "Falha ao alternar log. Por favor, tente novamente.",
         variant: "destructive",
       })
     }
   }
 
-  // Función para eliminar un grupo
+  // Função para excluir um grupo
   const handleDelete = async (group: Group) => {
     toast({
-      title: "Confirm Delete",
-      description: `Are you sure you want to delete ${group.nome}?`,
+      title: "Confirmar Exclusão",
+      description: `Tem certeza que deseja excluir o grupo ${group.nome}?`,
       variant: "destructive",
       action: (
         <Button
@@ -86,35 +86,35 @@ export function GroupList({ groups, loading, entriesPerPage, onRefresh, onToggle
               const response = await fetch(`/api/groups/${group.id}`, { method: 'DELETE' })
               if (!response.ok) {
                 const errorData = await response.json()
-                throw new Error(errorData.error || 'Failed to delete group')
+                throw new Error(errorData.error || 'Falha ao excluir grupo')
               }
 
-              // Refrescar la lista de grupos desde el servidor
+              // Atualizar a lista de grupos
               onRefresh()
 
-              // Mostrar un toast de éxito
+              // Mostrar um toast de sucesso
               toast({
-                title: "Success",
-                description: `${group.nome} has been deleted.`,
+                title: "Sucesso",
+                description: `O grupo ${group.nome} foi excluído com sucesso.`,
                 variant: "default",
               })
             } catch (error) {
-              console.error('Error deleting group:', error)
+              console.error('Erro ao excluir grupo:', error)
               toast({
-                title: "Error",
-                description: error.message || "Failed to delete group. Please try again.",
+                title: "Erro",
+                description: error.message || "Falha ao excluir grupo. Por favor, tente novamente.",
                 variant: "destructive",
               })
             }
           }}
         >
-          Confirm
+          Confirmar
         </Button>
       ),
     })
   }
 
-  // Mostrar un spinner si la tabla está cargando
+  // Mostrar um spinner se a tabela estiver carregando
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -125,15 +125,15 @@ export function GroupList({ groups, loading, entriesPerPage, onRefresh, onToggle
 
   return (
     <div className="overflow-x-auto">
-      <Table>
-        <TableHeader>
+      <Table className="border rounded-lg shadow-sm">
+        <TableHeader className="bg-gray-100 dark:bg-gray-800">
           <TableRow>
             <TableHead className="w-[50px]">#</TableHead>
-            <TableHead>ID Grupo</TableHead>
+            <TableHead>ID do Grupo</TableHead>
             <TableHead>Nome</TableHead>
-            <TableHead>Users</TableHead>
+            <TableHead>Participantes</TableHead>
             <TableHead>Logs</TableHead>
-            <TableHead>Logs Admin</TableHead>
+            <TableHead>Logs de Admin</TableHead>
             <TableHead className="text-right">Ações</TableHead>
           </TableRow>
         </TableHeader>
@@ -146,6 +146,7 @@ export function GroupList({ groups, loading, entriesPerPage, onRefresh, onToggle
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
                 transition={{ duration: 0.3 }}
+                className="hover:bg-gray-50 dark:hover:bg-gray-800"
               >
                 <TableCell>{(currentPage - 1) * entriesPerPage + index + 1}</TableCell>
                 <TableCell>{group.jid}</TableCell>
@@ -154,7 +155,7 @@ export function GroupList({ groups, loading, entriesPerPage, onRefresh, onToggle
                 <TableCell>
                   <Badge
                     variant={group.log ? "default" : "secondary"}
-                    className="cursor-pointer"
+                    className="cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900"
                     onClick={() => handleToggleLog(group, 'log')}
                   >
                     {group.log ? "Ativo" : "Desativado"}
@@ -163,7 +164,7 @@ export function GroupList({ groups, loading, entriesPerPage, onRefresh, onToggle
                 <TableCell>
                   <Badge
                     variant={group.log_adm ? "default" : "secondary"}
-                    className="cursor-pointer"
+                    className="cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900"
                     onClick={() => handleToggleLog(group, 'log_adm')}
                   >
                     {group.log_adm ? "Ativo" : "Desativado"}
@@ -173,21 +174,21 @@ export function GroupList({ groups, loading, entriesPerPage, onRefresh, onToggle
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button variant="ghost" className="h-8 w-8 p-0">
-                        <span className="sr-only">Open menu</span>
+                        <span className="sr-only">Abrir menu</span>
                         <MoreHorizontal className="h-4 w-4" />
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                      <DropdownMenuLabel>Ações</DropdownMenuLabel>
                       <DropdownMenuItem onClick={() => handleToggleLog(group, 'log')}>
-                        Toggle Logging
+                        Alternar Log
                       </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => handleToggleLog(group, 'log_adm')}>
-                        Toggle Admin Logging
+                        Alternar Log de Admin
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem onClick={() => handleDelete(group)}>
-                        Delete
+                        Excluir
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
@@ -199,7 +200,7 @@ export function GroupList({ groups, loading, entriesPerPage, onRefresh, onToggle
       </Table>
       <div className="flex justify-between items-center mt-4">
         <p className="text-sm text-muted-foreground">
-          Showing {(currentPage - 1) * entriesPerPage + 1} to {Math.min(currentPage * entriesPerPage, localGroups.length)} of {localGroups.length} entries
+          Mostrando {(currentPage - 1) * entriesPerPage + 1} a {Math.min(currentPage * entriesPerPage, localGroups.length)} de {localGroups.length} entradas
         </p>
         <div className="space-x-2">
           <Button
@@ -208,7 +209,7 @@ export function GroupList({ groups, loading, entriesPerPage, onRefresh, onToggle
             onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
             disabled={currentPage === 1}
           >
-            Previous
+            Anterior
           </Button>
           <Button
             variant="outline"
@@ -216,7 +217,7 @@ export function GroupList({ groups, loading, entriesPerPage, onRefresh, onToggle
             onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
             disabled={currentPage === totalPages}
           >
-            Next
+            Próxima
           </Button>
         </div>
       </div>

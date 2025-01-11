@@ -42,7 +42,7 @@ export default function GroupsPage({ params }: { params: { mainid: string } }) {
   const [newGroupParticipants, setNewGroupParticipants] = useState('')
   const { toast } = useToast()
 
-  // Fetch groups cuando mainid cambie
+  // Buscar grupos quando mainid mudar
   useEffect(() => {
     fetchGroups()
   }, [mainid])
@@ -52,15 +52,15 @@ export default function GroupsPage({ params }: { params: { mainid: string } }) {
       setLoading(true)
       const response = await fetch(`/api/groups?mainid=${mainid}`)
       if (!response.ok) {
-        throw new Error('Failed to fetch groups')
+        throw new Error('Falha ao buscar grupos')
       }
       const data: Group[] = await response.json()
       setGroups(data)
     } catch (error) {
-      console.error('Error fetching groups:', error)
+      console.error('Erro ao buscar grupos:', error)
       toast({
-        title: "Error",
-        description: "Failed to fetch groups. Please try again.",
+        title: "Erro",
+        description: "Falha ao buscar grupos. Por favor, tente novamente.",
         variant: "destructive",
       })
     } finally {
@@ -69,22 +69,22 @@ export default function GroupsPage({ params }: { params: { mainid: string } }) {
   }
 
   const handleDeleteAll = async () => {
-    if (window.confirm('Are you sure you want to delete all groups? This action cannot be undone.')) {
+    if (window.confirm('Tem certeza que deseja deletar todos os grupos? Esta ação não pode ser desfeita.')) {
       try {
         const response = await fetch(`/api/groups?mainid=${mainid}`, { method: 'DELETE' })
         if (!response.ok) {
-          throw new Error('Failed to delete all groups')
+          throw new Error('Falha ao deletar todos os grupos')
         }
         setGroups([])
         toast({
-          title: "Success",
-          description: "All groups have been deleted.",
+          title: "Sucesso",
+          description: "Todos os grupos foram deletados.",
         })
       } catch (error) {
-        console.error('Error deleting all groups:', error)
+        console.error('Erro ao deletar todos os grupos:', error)
         toast({
-          title: "Error",
-          description: "Failed to delete all groups. Please try again.",
+          title: "Erro",
+          description: "Falha ao deletar todos os grupos. Por favor, tente novamente.",
           variant: "destructive",
         })
       }
@@ -94,7 +94,7 @@ export default function GroupsPage({ params }: { params: { mainid: string } }) {
   const handleToggleLog = async (groupId: number, type: 'log' | 'log_adm') => {
     try {
       const group = groups.find(g => g.id === groupId)
-      if (!group) throw new Error('Group not found')
+      if (!group) throw new Error('Grupo não encontrado')
 
       const updatedGroup = { ...group, [type]: !group[type] }
       const response = await fetch(`/api/groups/${groupId}?mainid=${mainid}`, {
@@ -103,21 +103,21 @@ export default function GroupsPage({ params }: { params: { mainid: string } }) {
         body: JSON.stringify({ [type]: updatedGroup[type] }),
       })
 
-      if (!response.ok) throw new Error('Failed to update group')
+      if (!response.ok) throw new Error('Falha ao atualizar grupo')
 
       setGroups(prevGroups =>
         prevGroups.map(g => (g.id === groupId ? updatedGroup : g))
       )
 
       toast({
-        title: "Success",
-        description: `${type === 'log' ? 'Logging' : 'Admin logging'} ${updatedGroup[type] ? 'enabled' : 'disabled'} for ${group.nome}`,
+        title: "Sucesso",
+        description: `${type === 'log' ? 'Log' : 'Log de admin'} ${updatedGroup[type] ? 'ativado' : 'desativado'} para ${group.nome}`,
       })
     } catch (error) {
-      console.error('Error toggling log:', error)
+      console.error('Erro ao alternar log:', error)
       toast({
-        title: "Error",
-        description: "Failed to toggle log. Please try again.",
+        title: "Erro",
+        description: "Falha ao alternar log. Por favor, tente novamente.",
         variant: "destructive",
       })
     }
@@ -135,7 +135,7 @@ export default function GroupsPage({ params }: { params: { mainid: string } }) {
         }),
       })
 
-      if (!response.ok) throw new Error('Failed to add group')
+      if (!response.ok) throw new Error('Falha ao adicionar grupo')
 
       const newGroup = await response.json()
       setGroups(prevGroups => [...prevGroups, newGroup])
@@ -144,14 +144,14 @@ export default function GroupsPage({ params }: { params: { mainid: string } }) {
       setNewGroupParticipants('')
 
       toast({
-        title: "Success",
-        description: "Group added successfully.",
+        title: "Sucesso",
+        description: "Grupo adicionado com sucesso.",
       })
     } catch (error) {
-      console.error('Error adding group:', error)
+      console.error('Erro ao adicionar grupo:', error)
       toast({
-        title: "Error",
-        description: "Failed to add group. Please try again.",
+        title: "Erro",
+        description: "Falha ao adicionar grupo. Por favor, tente novamente.",
         variant: "destructive",
       })
     }
@@ -177,14 +177,16 @@ export default function GroupsPage({ params }: { params: { mainid: string } }) {
     >
       <Card className="w-full">
         <CardHeader>
-          <CardTitle className="text-3xl font-bold">Group Management</CardTitle>
+          <CardTitle className="text-3xl font-bold bg-gradient-to-r from-blue-500 to-blue-700 bg-clip-text text-transparent">
+            Gerenciamento de Grupos
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex flex-col md:flex-row justify-between items-center mb-6 space-y-4 md:space-y-0 md:space-x-4">
             <div className="relative w-full md:w-64">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 transform text-muted-foreground" />
               <Input
-                placeholder="Search groups..."
+                placeholder="Buscar grupos..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10 pr-4 py-2 w-full"
@@ -192,36 +194,36 @@ export default function GroupsPage({ params }: { params: { mainid: string } }) {
             </div>
             <Select value={entriesPerPage} onValueChange={setEntriesPerPage}>
               <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Entries per page" />
+                <SelectValue placeholder="Entradas por página" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="10">10 per page</SelectItem>
-                <SelectItem value="25">25 per page</SelectItem>
-                <SelectItem value="50">50 per page</SelectItem>
-                <SelectItem value="100">100 per page</SelectItem>
+                <SelectItem value="10">10 por página</SelectItem>
+                <SelectItem value="25">25 por página</SelectItem>
+                <SelectItem value="50">50 por página</SelectItem>
+                <SelectItem value="100">100 por página</SelectItem>
               </SelectContent>
             </Select>
           </div>
           <div className="mb-6">
-            <h2 className="text-xl font-semibold mb-4">Add New Group</h2>
+            <h2 className="text-xl font-semibold mb-4">Adicionar Novo Grupo</h2>
             <div className="flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-4">
               <Input
-                placeholder="Group Name"
+                placeholder="Nome do Grupo"
                 value={newGroupName}
                 onChange={(e) => setNewGroupName(e.target.value)}
               />
               <Input
-                placeholder="Group JID"
+                placeholder="JID do Grupo"
                 value={newGroupJid}
                 onChange={(e) => setNewGroupJid(e.target.value)}
               />
               <Input
-                placeholder="Participants"
+                placeholder="Participantes"
                 value={newGroupParticipants}
                 onChange={(e) => setNewGroupParticipants(e.target.value)}
                 type="number"
               />
-              <Button onClick={handleAddGroup}>Add Group</Button>
+              <Button onClick={handleAddGroup}>Adicionar Grupo</Button>
             </div>
           </div>
           <GroupActions 
@@ -231,9 +233,9 @@ export default function GroupsPage({ params }: { params: { mainid: string } }) {
           />
           <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-6">
             <TabsList className="grid w-full grid-cols-3 mb-4">
-              <TabsTrigger value="all">All Groups</TabsTrigger>
-              <TabsTrigger value="logged">Logged Groups</TabsTrigger>
-              <TabsTrigger value="admin">Admin Logged</TabsTrigger>
+              <TabsTrigger value="all">Todos os Grupos</TabsTrigger>
+              <TabsTrigger value="logged">Grupos com Log</TabsTrigger>
+              <TabsTrigger value="admin">Log de Admin</TabsTrigger>
             </TabsList>
             <AnimatePresence mode="wait">
               <motion.div

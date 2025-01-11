@@ -17,7 +17,7 @@ export function StatsCards({ usersCount, instancesCount }: StatsCardsProps) {
       >
         <Card className="hover:shadow-lg transition-all duration-300 hover:scale-[1.02]">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Users</CardTitle>
+            <CardTitle className="text-sm font-medium">Total de Usuários</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -34,7 +34,7 @@ export function StatsCards({ usersCount, instancesCount }: StatsCardsProps) {
       >
         <Card className="hover:shadow-lg transition-all duration-300 hover:scale-[1.02]">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Instances</CardTitle>
+            <CardTitle className="text-sm font-medium">Total de Instâncias</CardTitle>
             <Server className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>

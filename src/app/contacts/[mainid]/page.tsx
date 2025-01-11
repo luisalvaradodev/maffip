@@ -332,9 +332,9 @@ export default function ContactsPage() {
           className="flex items-center justify-between"
         >
           <div>
-            <h1 className="text-4xl font-bold tracking-tight">
-              Gerenciamento de Contatos
-            </h1>
+          <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-blue-500 to-cyan-400 bg-clip-text text-transparent">
+            Gerenciamento de Contatos
+          </h1>
             <p className="mt-2 text-lg text-muted-foreground">
               Gerencie seus contatos e envie mensagens em massa de forma eficiente
             </p>

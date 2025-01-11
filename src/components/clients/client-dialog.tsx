@@ -90,7 +90,7 @@ export default function ClientDialog({
       form.reset({
         nome: client.nome || '',
         numero: client.numero || '',
-        valor: client.valor || 0,
+        valor: client.valor || 0, // Asegúrate de que sea un número válido
         validade: client.validade ? new Date(client.validade).toISOString().split('T')[0] : '',
         produto: client.produto || '',
         mainid: client.mainid || mainid,
@@ -99,7 +99,7 @@ export default function ClientDialog({
       form.reset({
         nome: '',
         numero: '',
-        valor: 0,
+        valor: 0, // Valor predeterminado
         validade: '',
         produto: `🛍️ Produto: [NOME DO PRODUTO]\n\n📅 DATA RENOVAÇÃO: [DATA]\n👤 Usuário: [EMAIL]\n🔐 Senha: [SENHA]\n💲 Valor: [VALOR]\n\n👤 *TELA:* [TELA]\n🔑 *PIN:* [PIN]\n\n💰 Saldo antes: [SALDO_ANTES]\n💰 Saldo Atual: [SALDO_ATUAL]\n\nℹ️ Informações Adicional:\n⚠️ REGRAS ⚠️\n\n- MUDOU EMAIL VAI SER TAXADO 🚫\n- NÃO MUDE SENHA 🚫\n- NÃO MUDE O NOME 🚫\n- NÃO MUDE O PIN 🚫\n\n- ISSO TUDO PODE OCASIONAR VC A PERDER O SUPORTE ⚠️\n\n- LINK DO GRUPO DE SUPORTE ⬇️\nhttps://chat.whatsapp.com/JCpjEob3I3U55DbeSZip4a`,
         mainid: mainid,
@@ -258,7 +258,10 @@ export default function ClientDialog({
                           type="number"
                           step="0.01"
                           {...field}
-                          onChange={(e) => field.onChange(parseFloat(e.target.value))}
+                          onChange={(e) => {
+                            const value = parseFloat(e.target.value);
+                            field.onChange(isNaN(value) ? 0 : value); // Si no es un número válido, establece 0
+                          }}
                           className="transition-all duration-200 border-muted/40 focus:border-primary hover:border-primary/60 bg-background/50 backdrop-blur-sm"
                         />
                       </FormControl>

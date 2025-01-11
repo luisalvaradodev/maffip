@@ -14,14 +14,14 @@ export function AdminHeader({ onCreateUser }: AdminHeaderProps) {
       className="flex justify-between items-center mb-6"
     >
       <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
-        Admin Dashboard
+        Painel de Administração
       </h1>
       <Button 
         onClick={onCreateUser}
         className="transition-all duration-300 hover:scale-105 bg-gradient-to-r from-primary to-purple-600"
       >
         <Plus className="mr-2 h-4 w-4" />
-        Create New User
+        Criar Novo Usuário
       </Button>
     </motion.div>
   );

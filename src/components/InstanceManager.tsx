@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { toast } from "@/hooks/use-toast"
 import { Badge } from "@/components/ui/badge"
-import { RefreshCw, LogOut, PhoneCall, Loader2, Plus, MoreVertical } from 'lucide-react'
+import { RefreshCw, LogOut, PhoneCall, Loader2, MoreVertical, Server, Wifi, WifiOff } from 'lucide-react'
 import { QRCodeSVG } from 'qrcode.react'
 import { motion, AnimatePresence } from "framer-motion"
 import {
@@ -17,8 +17,6 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -40,8 +38,6 @@ interface Instance {
     status: string
     serverUrl: string
     state: string
-    lastSeen?: string
-    phoneNumber?: string
   }
 }
 
@@ -52,8 +48,6 @@ export function InstanceManager() {
   const [qrCode, setQrCode] = useState<string | null>(null)
   const [connectingInstance, setConnectingInstance] = useState<string | null>(null)
   const [, setDeletingInstance] = useState<string | null>(null)
-  const [isCreateInstanceDialogOpen, setIsCreateInstanceDialogOpen] = useState(false)
-  const [newInstanceData, setNewInstanceData] = useState({ instanceName: '', phoneNumber: '' })
 
   useEffect(() => {
     fetchInstances()
@@ -74,19 +68,17 @@ export function InstanceManager() {
             instance: {
               ...instance.instance,
               state: stateData.instance.state,
-              lastSeen: new Date().toISOString(), // Simulated last seen time
-              phoneNumber: instance.instance.phoneNumber || 'N/A'
             }
           }
         }))
         setInstances(instancesWithState)
       } else {
-        console.error('Unexpected data format:', data)
-        setError('Unexpected data format received from server.')
+        console.error('Formato de dados inesperado:', data)
+        setError('Formato de dados inesperado recebido do servidor.')
       }
     } catch (error) {
-      console.error('Failed to fetch instances:', error)
-      setError('Failed to fetch instances. Please try again.')
+      console.error('Falha ao buscar instâncias:', error)
+      setError('Falha ao buscar instâncias. Por favor, tente novamente.')
     } finally {
       setLoading(false)
     }
@@ -97,17 +89,17 @@ export function InstanceManager() {
       const response = await fetch(`/api/instances/${instanceName}/restart`, { method: 'PUT' })
       if (response.ok) {
         toast({
-          title: "Instance restarted",
-          description: `Instance ${instanceName} has been restarted.`,
+          title: "Instância reiniciada",
+          description: `A instância ${instanceName} foi reiniciada.`,
         })
         fetchInstances()
       } else {
-        throw new Error('Failed to restart instance')
+        throw new Error('Falha ao reiniciar a instância')
       }
     } catch (error) {
       toast({
-        title: "Error",
-        description: "Failed to restart instance. Please try again.",
+        title: "Erro",
+        description: "Falha ao reiniciar a instância. Por favor, tente novamente.",
         variant: "destructive",
       })
     }
@@ -118,17 +110,17 @@ export function InstanceManager() {
       const response = await fetch(`/api/instances/${instanceName}/logout`, { method: 'DELETE' })
       if (response.ok) {
         toast({
-          title: "Instance logged out",
-          description: `Instance ${instanceName} has been logged out.`,
+          title: "Instância desconectada",
+          description: `A instância ${instanceName} foi desconectada.`,
         })
         fetchInstances()
       } else {
-        throw new Error('Failed to logout instance')
+        throw new Error('Falha ao desconectar a instância')
       }
     } catch (error) {
       toast({
-        title: "Error",
-        description: "Failed to logout instance. Please try again.",
+        title: "Erro",
+        description: "Falha ao desconectar a instância. Por favor, tente novamente.",
         variant: "destructive",
       })
     }
@@ -141,29 +133,27 @@ export function InstanceManager() {
         method: 'DELETE',
       });
   
-      // Verificar si la respuesta es JSON
       const contentType = response.headers.get('content-type');
       if (contentType && contentType.includes('application/json')) {
         const data = await response.json();
         if (response.ok) {
           toast({
-            title: "Instance deleted",
-            description: `Instance ${instanceName} has been deleted.`,
+            title: "Instância excluída",
+            description: `A instância ${instanceName} foi excluída.`,
           });
           fetchInstances();
         } else {
-          throw new Error(data.error || 'Failed to delete instance');
+          throw new Error(data.error || 'Falha ao excluir a instância');
         }
       } else {
-        // Si la respuesta no es JSON, manejar el error
         const text = await response.text();
-        throw new Error(`Unexpected response: ${text}`);
+        throw new Error(`Resposta inesperada: ${text}`);
       }
     } catch (error) {
-      console.error('Error deleting instance:', error);
+      console.error('Erro ao excluir a instância:', error);
       toast({
-        title: "Error",
-        description: error.message || "Failed to delete instance. Please try again.",
+        title: "Erro",
+        description: error.message || "Falha ao excluir a instância. Por favor, tente novamente.",
         variant: "destructive",
       });
     } finally {
@@ -178,7 +168,6 @@ export function InstanceManager() {
       const data = await response.json()
       if (data.code) {
         setQrCode(data.code)
-        // Start polling for connection state
         const intervalId = setInterval(async () => {
           const stateResponse = await fetch(`/api/instances/${instanceName}/state`)
           const stateData = await stateResponse.json()
@@ -188,47 +177,17 @@ export function InstanceManager() {
             setConnectingInstance(null)
             fetchInstances()
           }
-        }, 5000) // Poll every 5 seconds
+        }, 5000)
       } else {
-        throw new Error('Failed to get QR code')
+        throw new Error('Falha ao obter o QR code')
       }
     } catch (error) {
       toast({
-        title: "Error",
-        description: "Failed to connect instance. Please try again.",
+        title: "Erro",
+        description: "Falha ao conectar a instância. Por favor, tente novamente.",
         variant: "destructive",
       })
       setConnectingInstance(null)
-    }
-  }
-
-  const handleCreateInstance = async (e: React.FormEvent) => {
-    e.preventDefault()
-    try {
-      const response = await fetch('/api/instances', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(newInstanceData),
-      })
-      if (response.ok) {
-        toast({
-          title: "Instance created",
-          description: `Instance ${newInstanceData.instanceName} has been created.`,
-        })
-        setIsCreateInstanceDialogOpen(false)
-        setNewInstanceData({ instanceName: '', phoneNumber: '' })
-        fetchInstances()
-      } else {
-        throw new Error('Failed to create instance')
-      }
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to create instance. Please try again.",
-        variant: "destructive",
-      })
     }
   }
 
@@ -248,7 +207,7 @@ export function InstanceManager() {
       className="space-y-6"
     >
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">Instance Management</h2>
+        <h2 className="text-2xl font-bold">Gerenciamento de Instâncias</h2>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <AnimatePresence>
@@ -260,33 +219,49 @@ export function InstanceManager() {
               exit={{ opacity: 0, y: -20 }}
               transition={{ duration: 0.3, delay: index * 0.1 }}
             >
-              <Card className="hover:shadow-lg transition-shadow duration-300">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-lg font-bold truncate">{instance.instance.instanceName}</CardTitle>
-                  <Avatar>
-                    <AvatarImage src={`https://api.dicebear.com/6.x/initials/svg?seed=${instance.instance.instanceName}`} />
-                    <AvatarFallback>{instance.instance.instanceName.substring(0, 2).toUpperCase()}</AvatarFallback>
-                  </Avatar>
+              <Card className="hover:shadow-lg transition-shadow duration-300 border border-muted/50">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+                  <div className="flex items-center gap-3">
+                    <Avatar className="h-10 w-10">
+                      <AvatarImage src={`https://api.dicebear.com/6.x/initials/svg?seed=${instance.instance.instanceName}`} />
+                      <AvatarFallback>{instance.instance.instanceName.substring(0, 2).toUpperCase()}</AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <CardTitle className="text-lg font-bold truncate">
+                        {instance.instance.instanceName}
+                      </CardTitle>
+                      <span className="text-sm text-muted-foreground truncate">
+                        {instance.instance.serverUrl}
+                      </span>
+                    </div>
+                  </div>
+                  <Badge 
+                    variant={instance.instance.state === 'open' ? 'success' : 'destructive'}
+                    className="flex items-center gap-1 truncate"
+                  >
+                    {instance.instance.state === 'open' ? (
+                      <Wifi className="h-4 w-4" />
+                    ) : (
+                      <WifiOff className="h-4 w-4" />
+                    )}
+                    <span className="truncate">
+                      {instance.instance.state === 'open' ? 'Conectado' : 'Desconectado'}
+                    </span>
+                  </Badge>
                 </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium">Status:</span>
-                      <Badge variant={instance.instance.state === 'open' ? 'success' : 'warning'}>
-                        {instance.instance.state}
-                      </Badge>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium">Phone:</span>
-                      <span className="text-sm">{instance.instance.phoneNumber}</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium">Last Seen:</span>
-                      <span className="text-sm">{new Date(instance.instance.lastSeen!).toLocaleString()}</span>
-                    </div>
-                    <div className="text-sm text-muted-foreground truncate">
-                      {instance.instance.serverUrl}
-                    </div>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">Status:</span>
+                    <Badge variant="outline" className="text-sm">
+                      {instance.instance.status}
+                    </Badge>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">Tipo:</span>
+                    <Badge variant="outline" className="text-sm">
+                      <Server className="h-4 w-4 mr-1" />
+                      Servidor
+                    </Badge>
                   </div>
                   <div className="flex flex-wrap gap-2 mt-4">
                     <TooltipProvider>
@@ -302,7 +277,7 @@ export function InstanceManager() {
                           </Button>
                         </TooltipTrigger>
                         <TooltipContent>
-                          <p>Restart Instance</p>
+                          <p>Reiniciar Instância</p>
                         </TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
@@ -319,7 +294,7 @@ export function InstanceManager() {
                           </Button>
                         </TooltipTrigger>
                         <TooltipContent>
-                          <p>Logout Instance</p>
+                          <p>Desconectar Instância</p>
                         </TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
@@ -336,9 +311,9 @@ export function InstanceManager() {
                       </DialogTrigger>
                       <DialogContent>
                         <DialogHeader>
-                          <DialogTitle>Connect Instance</DialogTitle>
+                          <DialogTitle>Conectar Instância</DialogTitle>
                           <DialogDescription>
-                            Scan the QR code to connect the instance.
+                            Escaneie o QR code para conectar a instância.
                           </DialogDescription>
                         </DialogHeader>
                         {qrCode && (
@@ -347,7 +322,7 @@ export function InstanceManager() {
                           </div>
                         )}
                         {connectingInstance === instance.instance.instanceName && !qrCode && (
-                          <div className="text-center">Generating QR code...</div>
+                          <div className="text-center">Gerando QR code...</div>
                         )}
                       </DialogContent>
                     </Dialog>
@@ -358,23 +333,23 @@ export function InstanceManager() {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent>
-                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                        <DropdownMenuLabel>Ações</DropdownMenuLabel>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem onClick={() => handleRestart(instance.instance.instanceName)}>
-                          Restart
+                          Reiniciar
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => handleLogout(instance.instance.instanceName)}>
-                          Logout
+                          Desconectar
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => handleConnect(instance.instance.instanceName)}>
-                          Connect
+                          Conectar
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem 
                           onClick={() => handleDelete(instance.instance.instanceName)}
                           className="text-red-600"
                         >
-                          Delete
+                          Excluir
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -385,38 +360,6 @@ export function InstanceManager() {
           ))}
         </AnimatePresence>
       </div>
-      <Dialog open={isCreateInstanceDialogOpen} onOpenChange={setIsCreateInstanceDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Create New Instance</DialogTitle>
-            <DialogDescription>
-              Enter the details for the new instance.
-            </DialogDescription>
-          </DialogHeader>
-          <form onSubmit={handleCreateInstance} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="instanceName">Instance Name</Label>
-              <Input
-                id="instanceName"
-                value={newInstanceData.instanceName}
-                onChange={(e) => setNewInstanceData({ ...newInstanceData, instanceName: e.target.value })}
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="phoneNumber">Phone Number</Label>
-              <Input
-                id="phoneNumber"
-                value={newInstanceData.phoneNumber}
-                onChange={(e) => setNewInstanceData({ ...newInstanceData, phoneNumber: e.target.value })}
-                required
-              />
-            </div>
-            <Button type="submit">Create Instance</Button>
-          </form>
-        </DialogContent>
-      </Dialog>
     </motion.div>
   )
 }
-
