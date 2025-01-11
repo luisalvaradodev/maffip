@@ -1,14 +1,13 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, use } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/hooks/use-toast';
 import { 
   Loader2, Save, Edit, Info, CreditCard, LifeBuoy, 
-  User, MessagesSquare, MessageCircle, 
-  Clock, LayoutGrid 
+  MessagesSquare, MessageCircle, Clock, LayoutGrid 
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTheme } from 'next-themes';
@@ -26,6 +25,12 @@ type Textos = {
   texto_info: string;
   texto_contas: string;
   texto_suporte: string;
+};
+
+type TextosPageProps = {
+  params: {
+    mainid: string; // mainId se obtiene automáticamente de la URL
+  };
 };
 
 const cardVariants = {
@@ -83,11 +88,12 @@ const getCardStyle = (field: keyof Textos) => {
   return styles[field];
 };
 
-export default function TextosPage() {
+export default function TextosPage({ params }: TextosPageProps) {
+  const resolvedParams = use(params); // Desempaquetar la promesa de params
+  const { mainid } = resolvedParams; // mainId se obtiene de los parámetros de la URL
   const { theme } = useTheme();
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [expanded, setExpanded] = useState(true);
   const [textos, setTextos] = useState<Textos>({
     texto_titulo: 'Bienvenido a nuestro servicio.',
     texto_info: 'Aquí encontrarás información útil.',
@@ -100,15 +106,15 @@ export default function TextosPage() {
 
   useEffect(() => {
     fetchTextos();
-  }, []);
+  }, [mainid]); // Recargar textos cuando cambie el mainId
 
   const fetchTextos = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/textos');
+      const response = await fetch(`/api/textos?mainId=${mainid}`);
       if (!response.ok) throw new Error('Error fetching texts');
       const data = await response.json();
-      setTextos(data[0] || textos);
+      setTextos(data);
     } catch (error) {
       toast({
         title: 'Error',
@@ -135,7 +141,7 @@ export default function TextosPage() {
       const response = await fetch('/api/textos', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(textos),
+        body: JSON.stringify({ ...textos, mainid }), // Incluir mainId en el cuerpo
       });
 
       if (!response.ok) throw new Error('Error saving texts');
@@ -289,24 +295,7 @@ export default function TextosPage() {
                 <h3 className="font-semibold">Vista Previa de Mensajes</h3>
               </div>
               <div className="flex gap-2">
-                <Button
-                  variant={previewMode === 'chat' ? "secondary" : "ghost"}
-                  size="sm"
-                  onClick={() => setPreviewMode('chat')}
-                  className="text-white hover:text-white"
-                >
-                  <MessageCircle className="w-4 h-4 mr-1" />
-                  Chat
-                </Button>
-                <Button
-                  variant={previewMode === 'cards' ? "secondary" : "ghost"}
-                  size="sm"
-                  onClick={() => setPreviewMode('cards')}
-                  className="text-white hover:text-white"
-                >
-                  <LayoutGrid className="w-4 h-4 mr-1" />
-                  Tarjetas
-                </Button>
+
               </div>
             </div>
           </div>

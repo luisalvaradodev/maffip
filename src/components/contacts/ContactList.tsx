@@ -7,6 +7,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Pagination } from "@/components/shared/pagination";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 
 interface Contact {
   id: number;
@@ -61,6 +64,9 @@ export function ContactList({
   onPageChange
 }: ContactListProps) {
   const [localContacts, setLocalContacts] = useState<Contact[]>([]);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingContact, setEditingContact] = useState<Contact | null>(null);
+  const [newSaldo, setNewSaldo] = useState<string>('');
 
   useEffect(() => {
     setLocalContacts(contacts);
@@ -82,6 +88,48 @@ export function ContactList({
     }
   };
 
+  const openEditDialog = (contact: Contact) => {
+    setEditingContact(contact);
+    setNewSaldo(contact.saldo?.toString() || '');
+    setIsDialogOpen(true);
+  };
+
+  const closeEditDialog = () => {
+    setIsDialogOpen(false);
+    setEditingContact(null);
+    setNewSaldo('');
+  };
+
+  const handleSaldoUpdate = async () => {
+    if (editingContact) {
+      const updatedSaldo = parseFloat(newSaldo);
+      if (!isNaN(updatedSaldo)) {
+        try {
+          const response = await fetch(`/api/contacts?id=${editingContact.id}`, {
+            method: 'PATCH',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ saldo: updatedSaldo }),
+          });
+
+          if (response.ok) {
+            const updatedContacts = localContacts.map(contact =>
+              contact.id === editingContact.id ? { ...contact, saldo: updatedSaldo } : contact
+            );
+            setLocalContacts(updatedContacts);
+            closeEditDialog();
+            onRefresh(); // Recargar los contactos si es necesario
+          } else {
+            console.error('Failed to update saldo');
+          }
+        } catch (error) {
+          console.error('Error updating saldo:', error);
+        }
+      }
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center h-64 space-y-4">
@@ -92,7 +140,7 @@ export function ContactList({
   }
 
   return (
-    <div className="space-y-4 mx-6 my-8"> {/* Añadido más espacio con mx-6 y my-8 */}
+    <div className="space-y-4 mx-6 my-8">
       <div className="rounded-md border shadow-sm">
         <Table>
           <TableHeader className="bg-muted/50">
@@ -143,7 +191,10 @@ export function ContactList({
                   </TableCell>
                   <TableCell>{contact.numero}</TableCell>
                   <TableCell>
-                    <span className={`font-medium ${contact.saldo ? 'text-green-600' : 'text-red-600'}`}>
+                    <span
+                      className={`font-medium ${contact.saldo ? 'text-green-600' : 'text-red-600'} cursor-pointer`}
+                      onClick={() => openEditDialog(contact)}
+                    >
                       {formatSaldo(contact.saldo)}
                     </span>
                   </TableCell>
@@ -169,9 +220,35 @@ export function ContactList({
           </TableBody>
         </Table>
       </div>
-      
+
+      {/* Diálogo para editar el saldo */}
+      <Dialog open={isDialogOpen} onOpenChange={closeEditDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Editar Saldo</DialogTitle>
+            <DialogDescription>
+              Edite o saldo do contato {editingContact?.nome}.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <Input
+              type="number"
+              value={newSaldo}
+              onChange={(e) => setNewSaldo(e.target.value)}
+              placeholder="Novo saldo"
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={closeEditDialog}>
+              Cancelar
+            </Button>
+            <Button onClick={handleSaldoUpdate}>Salvar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {totalPages > 1 && (
-        <div className="flex justify-center mt-8"> {/* Añadido más espacio con mt-8 */}
+        <div className="flex justify-center mt-8">
           <Pagination
             currentPage={currentPage}
             totalPages={totalPages}

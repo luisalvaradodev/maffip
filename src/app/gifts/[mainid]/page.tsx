@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useParams } from 'next/navigation'; // Importamos useParams
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
@@ -21,6 +22,7 @@ import type { Contact } from '@/features/data/types';
 import { useDebounce } from 'use-debounce'; // npm install use-debounce
 
 export default function Home() {
+  const { mainid } = useParams(); // Obtenemos el mainid de la ruta
   const [loading, setLoading] = useState(false);
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [selectedContacts, setSelectedContacts] = useState<number[]>([]);
@@ -38,7 +40,6 @@ export default function Home() {
   const [instances, setInstances] = useState<any[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [contactsPerPage] = useState(10); // Número de contactos por página
-  const [mainid, setMainid] = useState(88); // mainid por defecto
 
   useEffect(() => {
     fetchContacts();

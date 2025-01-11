@@ -1,7 +1,7 @@
 'use client';
 
 import { useUser } from '@/app/context/UserContext';
-import { Home, User, Users, Settings, LayoutDashboard, Backpack, Group, MessagesSquare, Send, UserRoundSearch, QrCode, ChevronLeft, Gift, ChevronDown, LogOut } from 'lucide-react';
+import { Home, User, Users, Settings, LayoutDashboard, Backpack, Group, MessagesSquare, Send, UserRoundSearch, ChevronLeft, Gift, ChevronDown, LogOut, Database, Icon } from 'lucide-react';
 import {
   Sidebar,
   SidebarContent,
@@ -36,18 +36,25 @@ export function AppSidebar() {
     { title: 'Admin', url: `/admin`, icon: Home },
     { title: 'Profile', url: `/profile/${user.id}`, icon: User },
     { 
+      title: 'Bot Contas', 
+      icon: Database,
+      subItems: [
+        { title: 'Meus produtos', url: `/products/${user.id}` },
+        { title: 'CC/GG', url: `/categoriaCC/${user.id}` },
+        { title: 'Textos', url: `/textos/${user.id}` },
+      ]
+    },
+    { 
       title: 'Contatos', 
       icon: UserRoundSearch,
       subItems: [
-        { title: 'Meus Contatos', url: `/contacts` },
+        { title: 'Meus Contatos', url: `/contacts/${user.id}` },
         { title: 'Clientes', url: `/clients/${user.id}` },
       ]
     },
-    { title: 'Textos', url: `/textos`, icon: Send },
-    { title: 'Gifts', url: `/gifts`, icon: Gift },
-    { title: 'Grupos', url: `/groups`, icon: MessagesSquare },
-    { title: 'Produtos', url: `/products`, icon: Backpack },
-    { title: 'Categorias', url: `/categories`, icon: Group },
+    { title: 'Gifts', url: `/gifts/${user.id}`, icon: Gift },
+    { title: 'Grupos', url: `/groups/${user.id}`, icon: MessagesSquare },
+    { title: 'Categorias', url: `/categories/${user.id}`, icon: Group },
   ];
 
   if (user.permissao === 1) {
@@ -121,7 +128,7 @@ export function AppSidebar() {
           <SidebarGroupContent>
             <SidebarMenu>
               {items.map((item) => {
-                const isActive = pathname === item.url;
+                const isActive = pathname === item.url || pathname.startsWith(`${item.url}/`); // Verificación mejorada
                 const hasSubItems = item.subItems && item.subItems.length > 0;
 
                 return (

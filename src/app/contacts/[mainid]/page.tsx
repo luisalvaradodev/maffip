@@ -22,6 +22,7 @@ import { Contact, Instance, PrefabText } from '@/features/data/types/contacts';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { useParams } from 'next/navigation';
 
 const ITEMS_PER_PAGE = 10;
 
@@ -49,6 +50,7 @@ const itemVariants = {
 };
 
 export default function ContactsPage() {
+  const { mainid } = useParams(); // Obtener el mainid de la URL
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -69,7 +71,7 @@ export default function ContactsPage() {
   const fetchContacts = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/contacts?mainid=88');
+      const response = await fetch(`/api/contacts?mainid=${mainid}`);
       if (!response.ok) throw new Error('Failed to fetch contacts');
       const data: Contact[] = await response.json();
       setContacts(data);
@@ -83,7 +85,7 @@ export default function ContactsPage() {
     } finally {
       setLoading(false);
     }
-  }, [toast]);
+  }, [mainid, toast]);
 
   // Fetch WhatsApp instances
   const fetchInstances = useCallback(async () => {
@@ -103,7 +105,7 @@ export default function ContactsPage() {
   // Fetch prefab texts
   const fetchPrefabTexts = useCallback(async () => {
     try {
-      const response = await fetch('/api/texts?mainid=88');
+      const response = await fetch(`/api/texts?mainid=${mainid}`);
       if (!response.ok) throw new Error('Failed to fetch prefab texts');
       const data: PrefabText[] = await response.json();
       setPrefabTexts(data);
@@ -115,7 +117,7 @@ export default function ContactsPage() {
         variant: "destructive",
       });
     }
-  }, [toast]);
+  }, [mainid, toast]);
 
   useEffect(() => {
     fetchContacts();

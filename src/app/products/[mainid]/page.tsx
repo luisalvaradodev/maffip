@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useParams } from "next/navigation";
 import { Product } from "@/features/data/types";
 import { ProductTable } from "@/components/products/product-table";
 import { Button } from "@/components/ui/button";
@@ -10,22 +11,24 @@ import { toast } from "sonner";
 import { motion } from "framer-motion";
 
 export default function ProductsPage() {
+  const { mainid } = useParams<{ mainid: string }>(); // Obtener el mainid de la URL
   const [products, setProducts] = useState<Product[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
   useEffect(() => {
-    fetchProducts();
-  }, []);
+    if (mainid) {
+      fetchProducts(mainid); // Llamar a fetchProducts con el mainid
+    }
+  }, [mainid]);
 
-  const fetchProducts = async () => {
+  const fetchProducts = async (mainid: string) => {
     try {
       setLoading(true);
-      const response = await fetch("/api/products");
+      const response = await fetch(`/api/products?mainid=${mainid}`); // Filtrar por mainid
       const data = await response.json();
       setProducts(data.products || []);
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {
       toast.error("Erro ao carregar produtos");
     } finally {
@@ -38,13 +41,12 @@ export default function ProductsPage() {
       const response = await fetch("/api/products", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(product),
+        body: JSON.stringify({ ...product, mainid }), // Incluir mainid en la creación
       });
       if (response.ok) {
         toast.success("Produto criado com sucesso");
-        fetchProducts();
+        fetchProducts(mainid); // Recargar los productos después de crear
       }
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {
       toast.error("Erro ao criar produto");
     }
@@ -55,13 +57,12 @@ export default function ProductsPage() {
       const response = await fetch("/api/products", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(product),
+        body: JSON.stringify({ ...product, mainid }), // Incluir mainid en la actualización
       });
       if (response.ok) {
         toast.success("Produto atualizado com sucesso");
-        fetchProducts();
+        fetchProducts(mainid); // Recargar los productos después de actualizar
       }
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {
       toast.error("Erro ao atualizar produto");
     }
@@ -74,9 +75,8 @@ export default function ProductsPage() {
       });
       if (response.ok) {
         toast.success("Produto excluído com sucesso");
-        fetchProducts();
+        fetchProducts(mainid); // Recargar los productos después de eliminar
       }
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {
       toast.error("Erro ao excluir produto");
     }
@@ -101,7 +101,7 @@ export default function ProductsPage() {
         </div>
         <Button
           onClick={() => {
-            setSelectedProduct(null); // Al abrir el diálogo de creación, no pasamos un producto seleccionado.
+            setSelectedProduct(null); // Limpiar el producto seleccionado al crear uno nuevo
             setIsDialogOpen(true);
           }}
           className="transition-all duration-200 hover:scale-105"
@@ -124,13 +124,16 @@ export default function ProductsPage() {
           <ProductTable
             products={products}
             onDelete={handleDelete}
-            onUpdate={handleUpdate}
+            onUpdate={(product) => {
+              setSelectedProduct(product); // Establecer el producto seleccionado para editar
+              setIsDialogOpen(true);
+            }}
           />
         )}
       </motion.div>
 
       <ProductDialog
-        product={selectedProduct} // Si hay un producto seleccionado, lo pasamos al diálogo.
+        product={selectedProduct} // Pasar el producto seleccionado al diálogo
         open={isDialogOpen}
         onOpenChange={setIsDialogOpen}
         onSave={(product: Product) => {
@@ -139,9 +142,9 @@ export default function ProductsPage() {
             return;
           }
           if (selectedProduct) {
-            handleUpdate(product); // Si hay un producto seleccionado, lo actualizamos.
+            handleUpdate(product); // Actualizar si hay un producto seleccionado
           } else {
-            handleCreate(product); // Si no hay un producto seleccionado, lo creamos.
+            handleCreate(product); // Crear si no hay un producto seleccionado
           }
           setIsDialogOpen(false);
         }}

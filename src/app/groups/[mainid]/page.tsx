@@ -17,6 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { use } from 'react' // Importar use para desenvolver params
 
 interface Group {
   id: number
@@ -27,22 +28,29 @@ interface Group {
   log_adm: boolean
 }
 
-export default function GroupsPage() {
+export default function GroupsPage({ params }: { params: { mainid: string } }) {
+  // Desenvolver params usando React.use()
+  const { mainid } = use(params)
+
   const [groups, setGroups] = useState<Group[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [activeTab, setActiveTab] = useState('all')
   const [entriesPerPage, setEntriesPerPage] = useState('10')
+  const [newGroupName, setNewGroupName] = useState('')
+  const [newGroupJid, setNewGroupJid] = useState('')
+  const [newGroupParticipants, setNewGroupParticipants] = useState('')
   const { toast } = useToast()
 
+  // Fetch groups cuando mainid cambie
   useEffect(() => {
     fetchGroups()
-  }, [])
+  }, [mainid])
 
   const fetchGroups = async () => {
     try {
       setLoading(true)
-      const response = await fetch('/api/groups')
+      const response = await fetch(`/api/groups?mainid=${mainid}`)
       if (!response.ok) {
         throw new Error('Failed to fetch groups')
       }
@@ -63,7 +71,7 @@ export default function GroupsPage() {
   const handleDeleteAll = async () => {
     if (window.confirm('Are you sure you want to delete all groups? This action cannot be undone.')) {
       try {
-        const response = await fetch('/api/groups', { method: 'DELETE' })
+        const response = await fetch(`/api/groups?mainid=${mainid}`, { method: 'DELETE' })
         if (!response.ok) {
           throw new Error('Failed to delete all groups')
         }
@@ -89,7 +97,7 @@ export default function GroupsPage() {
       if (!group) throw new Error('Group not found')
 
       const updatedGroup = { ...group, [type]: !group[type] }
-      const response = await fetch(`/api/groups/${groupId}`, {
+      const response = await fetch(`/api/groups/${groupId}?mainid=${mainid}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ [type]: updatedGroup[type] }),
@@ -97,7 +105,6 @@ export default function GroupsPage() {
 
       if (!response.ok) throw new Error('Failed to update group')
 
-      // Actualizar el estado local de los grupos
       setGroups(prevGroups =>
         prevGroups.map(g => (g.id === groupId ? updatedGroup : g))
       )
@@ -111,6 +118,40 @@ export default function GroupsPage() {
       toast({
         title: "Error",
         description: "Failed to toggle log. Please try again.",
+        variant: "destructive",
+      })
+    }
+  }
+
+  const handleAddGroup = async () => {
+    try {
+      const response = await fetch(`/api/groups?mainid=${mainid}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          nome: newGroupName,
+          jid: newGroupJid,
+          participantes: parseInt(newGroupParticipants),
+        }),
+      })
+
+      if (!response.ok) throw new Error('Failed to add group')
+
+      const newGroup = await response.json()
+      setGroups(prevGroups => [...prevGroups, newGroup])
+      setNewGroupName('')
+      setNewGroupJid('')
+      setNewGroupParticipants('')
+
+      toast({
+        title: "Success",
+        description: "Group added successfully.",
+      })
+    } catch (error) {
+      console.error('Error adding group:', error)
+      toast({
+        title: "Error",
+        description: "Failed to add group. Please try again.",
         variant: "destructive",
       })
     }
@@ -161,6 +202,28 @@ export default function GroupsPage() {
               </SelectContent>
             </Select>
           </div>
+          <div className="mb-6">
+            <h2 className="text-xl font-semibold mb-4">Add New Group</h2>
+            <div className="flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-4">
+              <Input
+                placeholder="Group Name"
+                value={newGroupName}
+                onChange={(e) => setNewGroupName(e.target.value)}
+              />
+              <Input
+                placeholder="Group JID"
+                value={newGroupJid}
+                onChange={(e) => setNewGroupJid(e.target.value)}
+              />
+              <Input
+                placeholder="Participants"
+                value={newGroupParticipants}
+                onChange={(e) => setNewGroupParticipants(e.target.value)}
+                type="number"
+              />
+              <Button onClick={handleAddGroup}>Add Group</Button>
+            </div>
+          </div>
           <GroupActions 
             groupCount={filteredGroups.length} 
             onRefresh={fetchGroups} 
@@ -191,7 +254,7 @@ export default function GroupsPage() {
                       onRefresh={fetchGroups}
                       loading={false}
                       entriesPerPage={parseInt(entriesPerPage)}
-                      onToggleLog={handleToggleLog} // Pasar la función de toggle
+                      onToggleLog={handleToggleLog}
                     />
                   )}
                 </TabsContent>

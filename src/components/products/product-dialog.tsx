@@ -28,6 +28,7 @@ import { motion } from "framer-motion";
 import { Loader2, Smile } from "lucide-react";
 import data from '@emoji-mart/data';
 import Picker from '@emoji-mart/react';
+import { useParams } from "next/navigation"; // Importa useParams para obtener el mainid de la URL
 
 interface ProductDialogProps {
   product: Product | null;
@@ -42,6 +43,7 @@ export function ProductDialog({
   onOpenChange,
   onSave,
 }: ProductDialogProps) {
+  const { mainid } = useParams(); // Obtén el mainid de la URL
   const [formData, setFormData] = useState<Partial<Product>>({
     produto: "",
     categoria: 0,
@@ -58,12 +60,16 @@ export function ProductDialog({
 
   // Cargar categorías cada vez que se abre el diálogo
   useEffect(() => {
-    if (open) {
+    if (open && mainid) {
       const fetchCategories = async () => {
         try {
-          const response = await fetch('/api/categories');
+          const response = await fetch(`/api/categories?mainid=${mainid}`);
           const data = await response.json();
-          setCategories(data);
+          if (Array.isArray(data)) {
+            setCategories(data);
+          } else {
+            console.error("Error: Expected an array of categories but got:", data);
+          }
         } catch (error) {
           console.error("Error fetching categories:", error);
         }
@@ -71,7 +77,7 @@ export function ProductDialog({
 
       fetchCategories();
     }
-  }, [open]);
+  }, [open, mainid]); // Vuelve a cargar las categorías cuando cambie el mainid o se abra el diálogo
 
   // Actualizar el formulario cuando cambia el producto o se abre el diálogo
   useEffect(() => {
@@ -92,12 +98,12 @@ export function ProductDialog({
   }, [product, open]); // Añadimos 'open' como dependencia
 
   const getCategoryName = (categoryId: number) => {
-    const category = categories.find(cat => cat.id === categoryId);
+    const category = categories.find((cat) => cat.id === categoryId);
     return category ? category.nome : "Desconhecida";
   };
 
   const generatePrefabricatedText = () => {
-    const categoryName = getCategoryName(formData.categoria);
+    const categoryName = getCategoryName(formData.categoria || 0);
     return `
 Nome:
   ${categoryName} 

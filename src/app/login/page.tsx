@@ -9,13 +9,10 @@ import { Label } from '@/components/ui/label';
 import { useUser } from '@/app/context/UserContext';
 import { EyeIcon, EyeOffIcon, LockIcon, UserIcon, ShoppingBag } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
-import { useTheme } from 'next-themes'; // Importamos useTheme para manejar el tema
+import { useTheme } from 'next-themes';
 
 // Componente para las estrellas que caen
-const Star = ({ id }: { id: number }) => {
-  const x = Math.random() * 100; // Posición horizontal aleatoria
-  const duration = Math.random() * 5 + 3; // Duración aleatoria entre 3 y 8 segundos
-
+const Star = ({ x, duration }: { x: number; duration: number }) => {
   return (
     <motion.div
       initial={{ y: -100, opacity: 0 }}
@@ -33,11 +30,7 @@ const Star = ({ id }: { id: number }) => {
 };
 
 // Componente para los cometas
-const Comet = ({ id }: { id: number }) => {
-  const x = Math.random() * 100; // Posición horizontal aleatoria
-  const y = Math.random() * 100; // Posición vertical aleatoria
-  const duration = Math.random() * 10 + 5; // Duración aleatoria entre 5 y 15 segundos
-
+const Comet = ({ x, y, duration }: { x: number; y: number; duration: number }) => {
   return (
     <motion.div
       initial={{ x: -100, y: -100, opacity: 0 }}
@@ -72,11 +65,37 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false); // Estado para controlar la animación de despegue
-  const [showExplosion, setShowExplosion] = useState(false); // Estado para controlar el estallido
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [showExplosion, setShowExplosion] = useState(false);
+  const [stars, setStars] = useState<{ x: number; duration: number }[]>([]);
+  const [comets, setComets] = useState<{ x: number; y: number; duration: number }[]>([]);
   const router = useRouter();
   const { setUser } = useUser();
-  const { theme } = useTheme(); // Obtenemos el tema actual
+  const { theme, setTheme } = useTheme();
+
+  // Generar estrellas y cometas después de que el componente se monte
+  useEffect(() => {
+    const generatedStars = [...Array(30)].map(() => ({
+      x: Math.random() * 100,
+      duration: Math.random() * 5 + 3,
+    }));
+    setStars(generatedStars);
+
+    const generatedComets = [...Array(3)].map(() => ({
+      x: Math.random() * 100,
+      y: Math.random() * 100,
+      duration: Math.random() * 10 + 5,
+    }));
+    setComets(generatedComets);
+  }, []);
+
+  // Sincronizar el tema después de que el componente se monte
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const savedTheme = localStorage.getItem('theme') || 'light';
+      setTheme(savedTheme);
+    }
+  }, [setTheme]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -101,7 +120,9 @@ export default function LoginPage() {
       const data = await res.json();
 
       if (res.ok) {
-        localStorage.setItem('authToken', data.token);
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('authToken', data.token);
+        }
         setUser({
           id: data.id,
           login: data.login,
@@ -109,25 +130,20 @@ export default function LoginPage() {
           permissao: 0,
         });
 
-        // Mostrar toast de sucesso
         toast({
           title: 'Login bem-sucedido!',
           description: 'Você foi autenticado com sucesso.',
           variant: 'default',
         });
 
-        // Ativar a animação de despegue e o estallido
         setIsLoggedIn(true);
         setShowExplosion(true);
 
-        // Redirecionar após a animação
         setTimeout(() => {
           router.push(`/admin`);
-        }, 1500); // Duração da animação
+        }, 1500);
       } else {
         setError(data.error || 'Falha no login');
-
-        // Mostrar toast de erro
         toast({
           title: 'Falha no login',
           description: data.error || 'Por favor, verifique suas credenciais e tente novamente.',
@@ -137,8 +153,6 @@ export default function LoginPage() {
     } catch (error) {
       console.error('Erro durante o login:', error);
       setError('Ocorreu um erro. Por favor, tente novamente mais tarde.');
-
-      // Mostrar toast de erro
       toast({
         title: 'Erro',
         description: 'Ocorreu um erro. Por favor, tente novamente mais tarde.',
@@ -151,13 +165,13 @@ export default function LoginPage() {
 
   return (
     <div className="flex items-center justify-center min-h-screen p-4 relative overflow-hidden">
-      {/* Fondo dinámico com estrelas e cometas */}
+      {/* Fondo dinámico con estrellas y cometas */}
       <div className="absolute inset-0 z-0">
-        {[...Array(30)].map((_, i) => (
-          <Star key={`star-${i}`} id={i} />
+        {stars.map((star, i) => (
+          <Star key={`star-${i}`} x={star.x} duration={star.duration} />
         ))}
-        {[...Array(3)].map((_, i) => (
-          <Comet key={`comet-${i}`} id={i} />
+        {comets.map((comet, i) => (
+          <Comet key={`comet-${i}`} x={comet.x} y={comet.y} duration={comet.duration} />
         ))}
       </div>
 
@@ -168,19 +182,19 @@ export default function LoginPage() {
         transition={{ duration: 0.5 }}
         className="w-full max-w-lg relative z-10"
       >
-        {/* Título estilizado com ícone acima */}
+        {/* Título estilizado con ícono arriba */}
         <motion.div
           initial={{ opacity: 0, y: -50 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2, duration: 0.5 }}
           className="flex flex-col items-center justify-center mb-8"
         >
-          {/* Ícone de bolsa de compras */}
+          {/* Ícono de bolsa de compras */}
           <motion.div
             animate={isLoggedIn ? { y: -100, opacity: 0 } : { y: 0, opacity: 1 }}
             transition={{ duration: 1, ease: 'easeInOut' }}
           >
-            <ShoppingBag className="h-16 w-16 text-primary mb-4" /> {/* Ícone grande e centralizado */}
+            <ShoppingBag className="h-16 w-16 text-primary mb-4" />
           </motion.div>
           {/* Título estilizado */}
           <motion.h1
@@ -189,12 +203,12 @@ export default function LoginPage() {
             transition={{ duration: 1, ease: 'easeInOut' }}
           >
             <span className="text-primary">VM</span>
-            <span className={theme === 'dark' ? 'text-white' : 'text-black'}>STORE</span> {/* Muda a cor conforme o tema */}
+            <span className={theme === 'dark' ? 'text-white' : 'text-black'}>STORE</span>
             <span className="text-primary">PRO</span>
           </motion.h1>
         </motion.div>
 
-        {/* Efeito de estouro */}
+        {/* Efecto de explosión */}
         <AnimatePresence>
           {showExplosion && (
             <motion.div
@@ -207,21 +221,21 @@ export default function LoginPage() {
                 <Particle
                   key={`particle-${i}`}
                   id={i}
-                  angle={(i * 18 * Math.PI) / 180} // Ângulo em radianos
-                  distance={100} // Distância do estouro
+                  angle={(i * 18 * Math.PI) / 180}
+                  distance={100}
                 />
               ))}
             </motion.div>
           )}
         </AnimatePresence>
 
-        {/* Formulário de login */}
+        {/* Formulario de login */}
         <form
           onSubmit={handleSubmit}
           className="bg-background border border-border rounded-2xl shadow-lg p-10"
         >
           <div className="space-y-8">
-            {/* Campo de usuário */}
+            {/* Campo de usuario */}
             <div>
               <Label htmlFor="login" className="block text-lg font-medium text-foreground mb-3">
                 Usuário
@@ -275,7 +289,7 @@ export default function LoginPage() {
             </div>
           </div>
 
-          {/* Mensagem de erro */}
+          {/* Mensaje de error */}
           <AnimatePresence>
             {error && (
               <motion.p
@@ -290,7 +304,7 @@ export default function LoginPage() {
             )}
           </AnimatePresence>
 
-          {/* Botão de login */}
+          {/* Botón de login */}
           <Button
             type="submit"
             disabled={isLoading}

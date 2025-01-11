@@ -2,9 +2,16 @@ import { NextResponse } from 'next/server';
 import { executeQuery } from '@/features/data/actions/db';
 import { OkPacket } from 'mysql2';
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    const categories = await executeQuery('SELECT * FROM categoria');
+    const { searchParams } = new URL(request.url);
+    const mainid = searchParams.get('mainid');
+
+    if (!mainid) {
+      return NextResponse.json({ error: 'mainid is required' }, { status: 400 });
+    }
+
+    const categories = await executeQuery('SELECT * FROM categoria WHERE mainid = ?', [mainid]);
     return NextResponse.json(categories);
   } catch (error) {
     console.error('Error fetching categories:', error);
@@ -17,11 +24,14 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { nome, mainid, valor, descricao, status, img, tipo } = body;
 
+    if (!mainid) {
+      return NextResponse.json({ error: 'mainid is required' }, { status: 400 });
+    }
+
     const result = await executeQuery<OkPacket>(
       'INSERT INTO categoria (nome, mainid, valor, descricao, status, img, tipo) VALUES (?, ?, ?, ?, ?, ?, ?)',
-      [nome, mainid ?? 0, valor, descricao, status, img, tipo] // Valor predeterminado para mainid
+      [nome, mainid, valor, descricao, status, img, tipo]
     );
-    
 
     return NextResponse.json({ id: result.insertId });
   } catch (error) {
@@ -33,11 +43,15 @@ export async function POST(request: Request) {
 export async function PUT(request: Request) {
   try {
     const body = await request.json();
-    const { id, ...updateData } = body;
+    const { id, mainid, ...updateData } = body;
+
+    if (!mainid) {
+      return NextResponse.json({ error: 'mainid is required' }, { status: 400 });
+    }
 
     const result = await executeQuery<OkPacket>(
-      'UPDATE categoria SET ? WHERE id = ?',
-      [updateData, id]
+      'UPDATE categoria SET ? WHERE id = ? AND mainid = ?',
+      [updateData, id, mainid]
     );
 
     if (result.affectedRows === 0) {
@@ -55,14 +69,15 @@ export async function DELETE(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
+    const mainid = searchParams.get('mainid');
 
-    if (!id) {
-      return NextResponse.json({ error: 'ID is required' }, { status: 400 });
+    if (!id || !mainid) {
+      return NextResponse.json({ error: 'ID and mainid are required' }, { status: 400 });
     }
 
     const result = await executeQuery<OkPacket>(
-      'DELETE FROM categoria WHERE id = ?',
-      [id]
+      'DELETE FROM categoria WHERE id = ? AND mainid = ?',
+      [id, mainid]
     );
 
     if (result.affectedRows === 0) {

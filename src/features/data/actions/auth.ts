@@ -1,10 +1,28 @@
 'use server';
 
 import { executeQuery } from './db';
-import { User } from '@/features/data/types/index';
 import { RowDataPacket } from 'mysql2';
 
-interface UserRow extends User, RowDataPacket {}
+interface UserRow extends RowDataPacket {
+  id: number;
+  login: string;
+  senha: string;
+  permissao: number;
+  img: string;
+  token: string;
+  jwt: string;
+  data: string;
+  expirado: number;
+  status: string;
+  numero: string;
+  bot: number;
+  bonus: number;
+  afiliado: number;
+  tokenmp: string;
+  dono: number;
+  bonus_pix: number;
+  bonus_pix_minimo: number;
+}
 
 export async function loginUser(login: string, senha: string) {
   try {
@@ -32,4 +50,3 @@ export async function loginUser(login: string, senha: string) {
     return { success: false, message: 'Error during login' };
   }
 }
-

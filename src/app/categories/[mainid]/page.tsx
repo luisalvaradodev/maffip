@@ -8,23 +8,25 @@ import { Button } from "@/components/ui/button";
 import { Plus, FolderTree } from "lucide-react";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
+import { useParams } from "next/navigation"; // Importa useParams para obtener el mainid de la URL
 
 export default function CategoriesPage() {
+  const { mainid } = useParams(); // Obtén el mainid de la URL
   const [categories, setCategories] = useState<Category[]>([]);
-  const [selectedCategory, setSelectedCategory] = useState<Category | null>(
-    null
-  );
+  const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchCategories();
-  }, []);
+    if (mainid) {
+      fetchCategories();
+    }
+  }, [mainid]); // Vuelve a cargar las categorías cuando cambie el mainid
 
   const fetchCategories = async () => {
     try {
       setLoading(true);
-      const response = await fetch("/api/categories");
+      const response = await fetch(`/api/categories?mainid=${mainid}`);
       const data = await response.json();
       setCategories(data);
     } catch (error) {
@@ -40,9 +42,9 @@ export default function CategoriesPage() {
       const response = await fetch("/api/categories", {
         method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(category),
+        body: JSON.stringify({ ...category, mainid }), // Incluye el mainid en el cuerpo de la solicitud
       });
-  
+
       if (response.ok) {
         toast.success(
           category.id
@@ -61,7 +63,7 @@ export default function CategoriesPage() {
 
   const handleDelete = async (id: number) => {
     try {
-      const response = await fetch(`/api/categories?id=${id}`, {
+      const response = await fetch(`/api/categories?id=${id}&mainid=${mainid}`, {
         method: "DELETE",
       });
       if (response.ok) {

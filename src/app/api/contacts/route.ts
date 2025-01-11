@@ -93,3 +93,21 @@ export async function PUT(request: NextRequest) {
     return NextResponse.json({ error: 'Failed to toggle block status' }, { status: 500 });
   }
 }
+
+export async function PATCH(request: NextRequest) {
+  const id = request.nextUrl.searchParams.get('id');
+  const { saldo } = await request.json();
+
+  if (!id || saldo === undefined) {
+    return NextResponse.json({ error: 'Missing id or saldo parameter' }, { status: 400 });
+  }
+
+  try {
+    console.log('Updating saldo for contact with id:', id);
+    await executeQuery('UPDATE contatos SET saldo = ? WHERE id = ?;', [saldo, id]);
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error('Error updating saldo:', error);
+    return NextResponse.json({ error: 'Failed to update saldo' }, { status: 500 });
+  }
+}

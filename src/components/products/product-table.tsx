@@ -34,6 +34,7 @@ import {
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast"; // Para notificaciones de copiado
+import { useParams } from "next/navigation"; // Importa useParams para obtener el mainid de la URL
 
 interface ProductTableProps {
   products: Product[] | null | undefined;
@@ -42,6 +43,7 @@ interface ProductTableProps {
 }
 
 export function ProductTable({ products, onDelete, onUpdate }: ProductTableProps) {
+  const { mainid } = useParams(); // Obtén el mainid de la URL
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -56,20 +58,26 @@ export function ProductTable({ products, onDelete, onUpdate }: ProductTableProps
   const ITEMS_PER_PAGE = 5;
   const [currentPage, setCurrentPage] = useState(1);
 
-  // Obtener las categorías al cargar el componente
-  useEffect(() => {
+   // Obtener las categorías al cargar el componente
+   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const response = await fetch('/api/categories');
+        const response = await fetch(`/api/categories?mainid=${mainid}`);
         const data = await response.json();
-        setCategories(data);
+        if (Array.isArray(data)) {
+          setCategories(data);
+        } else {
+          console.error("Error: Expected an array of categories but got:", data);
+        }
       } catch (error) {
         console.error("Error fetching categories:", error);
       }
     };
 
-    fetchCategories();
-  }, []);
+    if (mainid) {
+      fetchCategories();
+    }
+  }, [mainid]); // Vuelve a cargar las categorías cuando cambie el mainid
 
   const filteredProducts = Array.isArray(products)
     ? products.filter((product) =>
@@ -83,7 +91,7 @@ export function ProductTable({ products, onDelete, onUpdate }: ProductTableProps
 
   // Función para obtener el nombre de la categoría por su ID
   const getCategoryName = (categoryId: number) => {
-    const category = categories.find(cat => cat.id === categoryId);
+    const category = categories.find((cat) => cat.id === categoryId);
     return category ? category.nome : "Desconhecida";
   };
 
