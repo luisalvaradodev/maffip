@@ -249,10 +249,6 @@ export function InstanceManager() {
     >
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold">Instance Management</h2>
-        <Button onClick={() => setIsCreateInstanceDialogOpen(true)}>
-          <Plus className="mr-2 h-4 w-4" />
-          Create New Instance
-        </Button>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <AnimatePresence>

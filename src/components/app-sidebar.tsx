@@ -45,7 +45,6 @@ export function AppSidebar() {
     },
     { title: 'Textos', url: `/textos`, icon: Send },
     { title: 'Gifts', url: `/gifts`, icon: Gift },
-    { title: 'Whatsapp', url: `/whatsapp`, icon: QrCode },
     { title: 'Grupos', url: `/groups`, icon: MessagesSquare },
     { title: 'Produtos', url: `/products`, icon: Backpack },
     { title: 'Categorias', url: `/categories`, icon: Group },
